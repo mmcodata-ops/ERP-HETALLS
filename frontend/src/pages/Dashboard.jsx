@@ -1,3 +1,27 @@
+
+export const PORTAL_COLORS_MAP = {
+  "AMAZON": "#f59e0b",
+  "CASAVANI WEBSITE": "#10b981",
+  "EBAY-RUGSFOREVER": "#8b5cf6",
+  "ETSY-CASAVANI": "#f43f5e",
+  "ETSY-RUGSFOREVER": "#3b82f6",
+  "JAYPOR": "#d946ef",
+  "MIRRAW": "#06b6d4",
+  "PEPPERFRY": "#84cc16",
+  "WALMART": "#14b8a6",
+  "EBAY-CASAVANI": "#eab308",
+  "ETSY-MKM": "#ef4444",
+  "EBAY-MKM": "#0ea5e9",
+  "CRAFT-MKM": "#f97316",
+  "EBAY-CASAVANI (CARPET)": "#fef08a",
+  "AMAZON (CARPET)": "#fde68a",
+  "ETSY-CASAVANI (CARPET)": "#fecaca",
+  "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe"
+};
+export const FALLBACK_COLORS = ["#6366f1", "#14b8a6", "#f43f5e", "#84cc16", "#d946ef", "#eab308", "#0ea5e9", "#f97316", "#a855f7"];
+export const getPortalColor = (portal, index = 0) => {
+  return PORTAL_COLORS_MAP[portal] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+};
 import { useState, useEffect, useRef, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
@@ -322,7 +346,7 @@ const RevenueSpinningCard = ({ kpis, companiesRev, style = {} }) => {
           <div style={{ maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
             {companiesRev[currentFace.key].map(c => (
               <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '12px' }}>
-                <span style={{ color: c.color, fontWeight: 500 }}>{c.name}</span>
+                <span style={{ color: getPortalColor(c.name, 0), fontWeight: 500 }}>{c.name}</span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>${c.value.toLocaleString()}</span>
               </div>
             ))}
@@ -671,29 +695,7 @@ export default function Dashboard() {
     shiftedElements.push(kpiElements[(i - shiftOffset + 5) % 5]);
   }
 
-  const portalColorsMap = {
-    "AMAZON": "#f59e0b",
-    "CASAVANI WEBSITE": "#10b981",
-    "EBAY-RUGSFOREVER": "#8b5cf6",
-    "ETSY-CASAVANI": "#f43f5e",
-    "ETSY-RUGSFOREVER": "#3b82f6",
-    "JAYPOR": "#d946ef",
-    "MIRRAW": "#06b6d4",
-    "PEPPERFRY": "#84cc16",
-    "WALMART": "#14b8a6",
-    "EBAY-CASAVANI": "#eab308",
-    "ETSY-MKM": "#ef4444",
-    "EBAY-MKM": "#0ea5e9",
-    "CRAFT-MKM": "#f97316",
-    "EBAY-CASAVANI (CARPET)": "#fef08a",
-    "AMAZON (CARPET)": "#fde68a",
-    "ETSY-CASAVANI (CARPET)": "#fecaca",
-    "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe"
-  };
-  const fallbackColors = ["#6366f1", "#14b8a6", "#f43f5e", "#84cc16", "#d946ef", "#eab308", "#0ea5e9", "#f97316", "#a855f7"];
-  const getPortalColor = (portal, index) => {
-    return portalColorsMap[portal] || fallbackColors[index % fallbackColors.length];
-  };
+
   const formatPortalName = (portal) => {
     if (!portal) return "";
     return portal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ').replace('Ebay-rugsforever', 'Ebay-Rugsforever').replace('Etsy-casavani', 'Etsy-Casavani').replace('Etsy-rugsforever', 'Etsy-Rugsforever');
