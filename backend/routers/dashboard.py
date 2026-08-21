@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 # NOTE: The sheet MUST be "Anyone with the link can view" for this to work!
 SHEET_URL_TEMPLATE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkTIObrXy88vQVg2_bAI2T8vPa1tXT5IWZw8tdvF9BW7aYj9qqTA6WeZjpJHlBlw4dpTj_o7dYhtzW/pub?gid=978055065&single=true&output=csv"
 MKM_SHEET_URL = "https://docs.google.com/spreadsheets/d/1NZo52WV0ynaYe-G2WrZ5ItRwPmNKjdwhr_GOyztAz8U/export?format=csv&gid=663408233"
+CARPET_SHEET_URL = "https://docs.google.com/spreadsheets/d/11NAw3BWNt3Bwcl1OqDv2EyL5WSLN1wZUg4qziq8SRDM/export?format=csv&gid=1394514115"
 
 _CACHE = {}
 _CACHE_LOCK = threading.Lock()
@@ -111,6 +112,48 @@ def fetch_mkm_sheet_csv():
                 return _CACHE[sheet_name][1]
             return []
 
+def fetch_carpet_sheet_csv():
+    now = time.time()
+    sheet_name = "CARPET_ORDERS"
+    with _CACHE_LOCK:
+        if sheet_name in _CACHE:
+            cached_time, data = _CACHE[sheet_name]
+            if now - cached_time <= CACHE_TTL:
+                return data
+                
+        if sheet_name in _FETCH_EVENTS:
+            event = _FETCH_EVENTS[sheet_name]
+            needs_fetch = False
+        else:
+            event = threading.Event()
+            _FETCH_EVENTS[sheet_name] = event
+            needs_fetch = True
+
+    if needs_fetch:
+        url = CARPET_SHEET_URL + f"&_cb={int(time.time())}"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                content = response.read().decode('utf-8')
+                data = list(csv.reader(StringIO(content)))
+        except Exception as e:
+            print(f"Error fetching CARPET sheet: {e}")
+            data = None
+            
+        with _CACHE_LOCK:
+            if data is not None:
+                _CACHE[sheet_name] = (time.time(), data)
+            if sheet_name in _FETCH_EVENTS:
+                del _FETCH_EVENTS[sheet_name]
+        event.set()
+        return data or []
+    else:
+        event.wait()
+        with _CACHE_LOCK:
+            if sheet_name in _CACHE:
+                return _CACHE[sheet_name][1]
+            return []
+
 def parse_price(val_str):
     try:
         if not val_str: return 0.0
@@ -119,15 +162,21 @@ def parse_price(val_str):
         return 0.0
 
 def parse_date(date_str):
-    try:
-        if not date_str: return None
-        date_str = date_str.strip()
+    if not date_str: return None
+    date_str = date_str.strip()
+    
+    formats = [
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%b %d, %Y",
+        "%B %d, %Y"
+    ]
+    for fmt in formats:
         try:
-            return datetime.strptime(date_str, "%d-%b-%Y")
+            return datetime.strptime(date_str, fmt)
         except ValueError:
-            return datetime.strptime(date_str, "%d-%B-%Y")
-    except ValueError:
-        return None
+            pass
+    return None
 
 # Column mappings for ORDERS sheet based on screenshots:
 # E (4): Portal
@@ -200,6 +249,28 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
 
     prev_dates = [d for d in orders_by_date.keys() if d < now.date()]
     yesterday_orders = orders_by_date[max(prev_dates)] if prev_dates else 0
+
+    carpet_data = fetch_carpet_sheet_csv()
+    for row in carpet_data[1:]:
+        if len(row) < 19: continue
+        status = row[12].strip().lower() if len(row) > 12 else ""
+        if status == "returned": continue
+        price = parse_price(row[18])
+        total_revenue += price
+        total_orders += 1
+        dt = parse_date(row[8]) if len(row) > 8 else None
+        if dt:
+            d = dt.date()
+            orders_by_date[d] = orders_by_date.get(d, 0) + 1
+            if fy_start <= dt <= fy_end:
+                this_year += 1
+                this_year_rev += price
+            if dt.year == current_year and dt.month == current_month:
+                this_month += 1
+                this_month_rev += price
+            if dt.date() == now.date():
+                today += 1
+                today_rev += price
 
     # Add MKM aggregate sales
     mkm_data = fetch_mkm_sheet_csv()
@@ -277,6 +348,25 @@ def companies_revenue(current_user=Depends(get_current_user)):
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
+
+    carpet_data = fetch_carpet_sheet_csv()
+    for row in carpet_data[1:]:
+        if len(row) < 19: continue
+        status = row[12].strip().lower() if len(row) > 12 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8]) if len(row) > 8 else None
+        portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        price = parse_price(row[18])
+        if price > 0:
+            portals["total"][portal] = portals["total"].get(portal, 0) + price
+            if dt:
+                if fy_start <= dt <= fy_end:
+                    portals["year"][portal] = portals["year"].get(portal, 0) + price
+                if dt.year == current_year and dt.month == current_month:
+                    portals["month"][portal] = portals["month"].get(portal, 0) + price
+                if dt.date() == today:
+                    portals["today"][portal] = portals["today"].get(portal, 0) + price
+                    counts["today"][portal] = counts["today"].get(portal, 0) + 1
                     
     # Add MKM aggregate sales
     mkm_data = fetch_mkm_sheet_csv()
@@ -346,6 +436,21 @@ def revenue_chart(current_user=Depends(get_current_user)):
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
             monthly_data[month_label]["order_count"] += 1
             
+    carpet_data = fetch_carpet_sheet_csv()
+    for row in carpet_data[1:]:
+        if len(row) < 19: continue
+        status = row[12].strip().lower() if len(row) > 12 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8]) if len(row) > 8 else None
+        portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        price = parse_price(row[18])
+        if dt and price > 0:
+            month_label = dt.strftime("%b %Y")
+            if month_label not in monthly_data:
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
+            monthly_data[month_label]["order_count"] += 1
+            
     # Add MKM aggregate sales
     mkm_data = fetch_mkm_sheet_csv()
     if len(mkm_data) >= 3:
@@ -406,6 +511,24 @@ def recent_orders(current_user=Depends(get_current_user)):
             "_dt": dt or datetime.min
         })
         
+    carpet_data = fetch_carpet_sheet_csv()
+    for i, row in enumerate(carpet_data[1:]):
+        if len(row) < 19: continue
+        dt = parse_date(row[8]) if len(row) > 8 else None
+        material = row[19].strip() if len(row) > 19 else ""
+        size = row[10].strip() if len(row) > 10 else ""
+        valid_orders.append({
+            "id": f"c_{i}",
+            "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
+            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+            "product_name": f"{material} {size}".strip(),
+            "amount": parse_price(row[18]),
+            "status": row[12].strip() if len(row) > 12 else "Unknown",
+            "order_date": row[8].strip() if len(row) > 8 else "",
+            "_dt": dt or datetime.min
+        })
+        
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     
     # Remove _dt
@@ -438,6 +561,25 @@ def today_orders(current_user=Depends(get_current_user)):
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[36]),
             "status": row[14].strip() if len(row) > 14 else "Unknown",
+            "order_date": row[8].strip() if len(row) > 8 else "",
+            "_dt": dt
+        })
+        
+    carpet_data = fetch_carpet_sheet_csv()
+    for i, row in enumerate(carpet_data[1:]):
+        if len(row) < 19: continue
+        dt = parse_date(row[8]) if len(row) > 8 else None
+        if not dt or dt.date() != today: continue
+        material = row[19].strip() if len(row) > 19 else ""
+        size = row[10].strip() if len(row) > 10 else ""
+        valid_orders.append({
+            "id": f"c_{i}",
+            "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
+            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+            "product_name": f"{material} {size}".strip(),
+            "amount": parse_price(row[18]),
+            "status": row[12].strip() if len(row) > 12 else "Unknown",
             "order_date": row[8].strip() if len(row) > 8 else "",
             "_dt": dt
         })
