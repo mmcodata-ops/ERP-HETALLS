@@ -680,7 +680,15 @@ export default function Dashboard() {
     "JAYPOR": "#d946ef",
     "MIRRAW": "#06b6d4",
     "PEPPERFRY": "#84cc16",
-    "WALMART": "#14b8a6"
+    "WALMART": "#14b8a6",
+    "EBAY-CASAVANI": "#eab308",
+    "ETSY-MKM": "#ef4444",
+    "EBAY-MKM": "#0ea5e9",
+    "CRAFT-MKM": "#f97316",
+    "EBAY-CASAVANI (CARPET)": "#fef08a",
+    "AMAZON (CARPET)": "#fde68a",
+    "ETSY-CASAVANI (CARPET)": "#fecaca",
+    "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe"
   };
   const fallbackColors = ["#6366f1", "#14b8a6", "#f43f5e", "#84cc16", "#d946ef", "#eab308", "#0ea5e9", "#f97316", "#a855f7"];
   const getPortalColor = (portal, index) => {

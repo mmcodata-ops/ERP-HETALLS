@@ -310,7 +310,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
     orders_data = fetch_sheet_csv("ORDERS")
     portals = {"total": {}, "today": {}, "month": {}, "year": {}}
     
-    colors = ["#f59e0b", "#3b82f6", "#ef4444", "#10b981", "#8b5cf6", "#ec4899", "#f87171", "#fb923c"]
+    colors = ["#f59e0b", "#3b82f6", "#ef4444", "#10b981", "#8b5cf6", "#ec4899", "#f87171", "#fb923c", "#14b8a6", "#eab308", "#0ea5e9", "#f97316", "#d946ef", "#06b6d4", "#84cc16", "#fef08a", "#fde68a", "#fecaca", "#bfdbfe"]
     
     portals = {"total": {}, "today": {}, "month": {}, "year": {}}
     counts = {"today": {}}
@@ -356,6 +356,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
         if status == "returned": continue
         dt = parse_date(row[8]) if len(row) > 8 else None
         portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
         if price > 0:
             portals["total"][portal] = portals["total"].get(portal, 0) + price
@@ -443,6 +444,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if status == "returned": continue
         dt = parse_date(row[8]) if len(row) > 8 else None
         portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
         if dt and price > 0:
             month_label = dt.strftime("%b %Y")
@@ -520,7 +522,7 @@ def recent_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": f"c_{i}",
             "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
-            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "platform": ((row[4].strip() or "UNKNOWN").upper() + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[18]),
@@ -575,7 +577,7 @@ def today_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": f"c_{i}",
             "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
-            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "platform": ((row[4].strip() or "UNKNOWN").upper() + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[18]),
