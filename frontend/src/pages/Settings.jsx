@@ -22,17 +22,6 @@ export default function Settings() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  
-  const handleSync = async () => {
-    try {
-      const res = await axios.get(`${API}/api/hr/trigger-sync`);
-      alert(res.data.message || "Database synchronization complete!");
-      fetchUsers();
-    } catch (e) {
-      alert("Failed to sync database.");
-      console.error(e);
-    }
-  };
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'viewer', department: 'General' })
@@ -247,14 +236,8 @@ export default function Settings() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button
-                onClick={handleSync}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-              >
-                <RefreshCw size={16} /> Sync Directory
-              </button>
-              <button
                 onClick={() => setShowAdd(!showAdd)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold-glow)', border: '1px solid var(--border-accent)', color: 'var(--gold)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--brand)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               >
                 <Plus size={16} /> Add User
               </button>
