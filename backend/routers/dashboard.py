@@ -343,11 +343,11 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
             total_revenue += price
             if dt:
                 if dt.year == current_year and dt.month == current_month:
-                    this_month_revenue += price
+                    this_month_rev += price
                 if dt.year == current_year:
-                    this_year_revenue += price
+                    this_year_rev += price
                 if dt.date() == today:
-                    today_revenue += price
+                    today_rev += price
 
     mkm_data = fetch_mkm_sheet_csv()
     if len(mkm_data) >= 3:
@@ -462,12 +462,10 @@ def companies_revenue(current_user=Depends(get_current_user)):
             portals["total"][portal] = portals["total"].get(portal, 0) + price
             counts["total"][portal] = counts["total"].get(portal, 0) + 1
             if dt:
+                if fy_start <= dt <= fy_end:
+                    portals["year"][portal] = portals["year"].get(portal, 0) + price
                 if dt.year == current_year and dt.month == current_month:
-                    portals["thisMonth"][portal] = portals["thisMonth"].get(portal, 0) + price
-                    counts["thisMonth"][portal] = counts["thisMonth"].get(portal, 0) + 1
-                if dt.year == current_year:
-                    portals["thisYear"][portal] = portals["thisYear"].get(portal, 0) + price
-                    counts["thisYear"][portal] = counts["thisYear"].get(portal, 0) + 1
+                    portals["month"][portal] = portals["month"].get(portal, 0) + price
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
@@ -658,10 +656,16 @@ def recent_orders(current_user=Depends(get_current_user)):
         if len(row) < 27: continue
         dt = parse_date(row[8])
         if dt:
+            material = row[10].strip() if len(row) > 10 else ""
+            size = row[11].strip() if len(row) > 11 else ""
             valid_orders.append({
+                "id": f"mkm_recent_" + (row[5].strip() if len(row) > 5 else "unknown"),
+                "order_id": row[5].strip() if len(row) > 5 else "Unknown",
                 "platform": normalize_portal(row[4]),
-                "customer": row[6].strip() if len(row) > 6 else "",
+                "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+                "product_name": f"{material} {size}".strip(),
                 "amount": parse_price(row[26]),
+                "status": row[14].strip() if len(row) > 14 else "Unknown",
                 "order_date": row[8].strip() if len(row) > 8 else "",
                 "_dt": dt
             })
@@ -727,10 +731,16 @@ def today_orders(current_user=Depends(get_current_user)):
         if len(row) < 27: continue
         dt = parse_date(row[8])
         if dt and dt.date() == today:
+            material = row[10].strip() if len(row) > 10 else ""
+            size = row[11].strip() if len(row) > 11 else ""
             valid_orders.append({
+                "id": f"mkm_today_" + (row[5].strip() if len(row) > 5 else "unknown"),
+                "order_id": row[5].strip() if len(row) > 5 else "Unknown",
                 "platform": normalize_portal(row[4]),
-                "customer": row[6].strip() if len(row) > 6 else "",
+                "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+                "product_name": f"{material} {size}".strip(),
                 "amount": parse_price(row[26]),
+                "status": row[14].strip() if len(row) > 14 else "Unknown",
                 "order_date": row[8].strip() if len(row) > 8 else "",
                 "_dt": dt
             })
