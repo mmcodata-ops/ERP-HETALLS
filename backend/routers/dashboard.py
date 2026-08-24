@@ -30,7 +30,7 @@ def _fetch_from_google(sheet_name):
     url += f"&_cb={int(time.time())}"
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=15) as response:
             content = response.read().decode('utf-8')
             data = list(csv.reader(StringIO(content)))
             return data
@@ -55,16 +55,18 @@ def fetch_sheet_csv(sheet_name):
             needs_fetch = True
 
     if needs_fetch:
-        data = _fetch_from_google(sheet_name)
-        with _CACHE_LOCK:
-            if data is not None:
-                _CACHE[sheet_name] = (time.time(), data)
-            if sheet_name in _FETCH_EVENTS:
-                del _FETCH_EVENTS[sheet_name]
-        event.set()
-        return data or []
+        try:
+            data = _fetch_from_google(sheet_name)
+            with _CACHE_LOCK:
+                if data is not None:
+                    _CACHE[sheet_name] = (time.time(), data)
+                if sheet_name in _FETCH_EVENTS:
+                    del _FETCH_EVENTS[sheet_name]
+            return data or []
+        finally:
+            event.set()
     else:
-        event.wait()
+        event.wait(timeout=20)
         with _CACHE_LOCK:
             if sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
@@ -137,7 +139,7 @@ def fetch_mkm_sheet_csv():
         url = MKM_SHEET_URL + f"&_cb={int(time.time())}"
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=15) as response:
                 content = response.read().decode('utf-8')
                 data = list(csv.reader(StringIO(content)))
         except Exception as e:
@@ -179,22 +181,23 @@ def fetch_carpet_sheet_csv():
         url = CARPET_SHEET_URL + f"&_cb={int(time.time())}"
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=15) as response:
                 content = response.read().decode('utf-8')
                 data = list(csv.reader(StringIO(content)))
         except Exception as e:
             print(f"Error fetching CARPET sheet: {e}")
             data = None
             
-        with _CACHE_LOCK:
-            if data is not None:
-                _CACHE[sheet_name] = (time.time(), data)
-            if sheet_name in _FETCH_EVENTS:
-                del _FETCH_EVENTS[sheet_name]
-        event.set()
+        finally:
+            with _CACHE_LOCK:
+                if data is not None:
+                    _CACHE[sheet_name] = (time.time(), data)
+                if sheet_name in _FETCH_EVENTS:
+                    del _FETCH_EVENTS[sheet_name]
+            event.set()
         return data or []
     else:
-        event.wait()
+        event.wait(timeout=20)
         with _CACHE_LOCK:
             if sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
