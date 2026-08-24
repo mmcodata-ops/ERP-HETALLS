@@ -161,6 +161,14 @@ def parse_price(val_str):
     except ValueError:
         return 0.0
 
+def normalize_portal(portal):
+    if not portal: return "UNKNOWN"
+    p = portal.strip().upper()
+    if "ETSY" in p and "MKM" in p: return "ETSY-MKM"
+    if "EBAY" in p and "MKM" in p: return "EBAY-MKM"
+    if "CRAFT" in p and "MKM" in p: return "CRAFT-MKM"
+    return p
+
 def parse_date(date_str):
     if not date_str: return None
     date_str = date_str.strip()
@@ -334,7 +342,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
         if status == "returned": continue
         
         dt = parse_date(row[8])
-        portal = (row[4].strip() or "UNKNOWN").upper()
+        portal = normalize_portal(row[4])
         price = parse_price(row[36])
         
         if price > 0:
@@ -355,7 +363,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
         status = row[12].strip().lower() if len(row) > 12 else ""
         if status == "returned": continue
         dt = parse_date(row[8]) if len(row) > 8 else None
-        portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        portal = normalize_portal(row[4]) if len(row) > 4 else "UNKNOWN"
         portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
         if price > 0:
@@ -427,7 +435,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if status == "returned": continue
         
         dt = parse_date(row[8])
-        portal = (row[4].strip() or "UNKNOWN").upper()
+        portal = normalize_portal(row[4])
         price = parse_price(row[36])
         
         if dt and price > 0:
@@ -443,7 +451,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
         status = row[12].strip().lower() if len(row) > 12 else ""
         if status == "returned": continue
         dt = parse_date(row[8]) if len(row) > 8 else None
-        portal = (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN"
+        portal = normalize_portal(row[4]) if len(row) > 4 else "UNKNOWN"
         portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
         if dt and price > 0:
@@ -504,7 +512,7 @@ def recent_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": i,
             "order_id": row[5].strip() if len(row) > 5 else f"ORD-{i}",
-            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "platform": normalize_portal(row[4]) if len(row) > 4 else "UNKNOWN",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[36]),
@@ -522,7 +530,7 @@ def recent_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": f"c_{i}",
             "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
-            "platform": ((row[4].strip() or "UNKNOWN").upper() + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
+            "platform": (normalize_portal(row[4]) + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[18]),
@@ -558,7 +566,7 @@ def today_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": i,
             "order_id": row[5].strip() if len(row) > 5 else f"ORD-{i}",
-            "platform": (row[4].strip() or "UNKNOWN").upper() if len(row) > 4 else "UNKNOWN",
+            "platform": normalize_portal(row[4]) if len(row) > 4 else "UNKNOWN",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[36]),
@@ -577,7 +585,7 @@ def today_orders(current_user=Depends(get_current_user)):
         valid_orders.append({
             "id": f"c_{i}",
             "order_id": row[5].strip() if len(row) > 5 else f"C-ORD-{i}",
-            "platform": ((row[4].strip() or "UNKNOWN").upper() + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
+            "platform": (normalize_portal(row[4]) + " (CARPET)") if len(row) > 4 else "UNKNOWN (CARPET)",
             "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
             "product_name": f"{material} {size}".strip(),
             "amount": parse_price(row[18]),

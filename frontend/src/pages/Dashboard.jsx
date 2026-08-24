@@ -14,6 +14,9 @@ export const PORTAL_COLORS_MAP = {
   "EBAY-MKM": "#0ea5e9",
   "CRAFT-MKM": "#f97316",
   "EBAY-CASAVANI (CARPET)": "#fef08a",
+  "ETSY-MKM (CARPET)": "#fca5a5",
+  "EBAY-MKM (CARPET)": "#7dd3fc",
+  "CRAFT-MKM (CARPET)": "#fdba74",
   "AMAZON (CARPET)": "#fde68a",
   "ETSY-CASAVANI (CARPET)": "#fecaca",
   "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe"
