@@ -70,6 +70,18 @@ def fetch_sheet_csv(sheet_name):
                 return _CACHE[sheet_name][1]
             return []
 
+
+def fetch_mkm_orders_sheet_csv():
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiemI7xv-XbL0WHtwPU4lsTpC1Xnssb8SKAYZHfVhjZqOjUinM59FxJRBLEd8_aghEbFxZhoKz-MQa/pub?output=csv&gid=277725317"
+    try:
+        response = urllib.request.urlopen(url)
+        csv_data = response.read().decode('utf-8')
+        reader = csv.reader(csv_data.splitlines())
+        return list(reader)
+    except Exception as e:
+        print(f"Error fetching MKM orders sheet: {e}")
+        return []
+
 def fetch_mkm_sheet_csv():
     now = time.time()
     sheet_name = "MKM_DAILY"
@@ -281,6 +293,28 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
                 today_rev += price
 
     # Add MKM aggregate sales
+
+    # Add MKM detailed orders
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        
+        dt = parse_date(row[8])
+        portal = normalize_portal(row[4])
+        price = parse_price(row[26])
+        
+        if price > 0:
+            total_revenue += price
+            if dt:
+                if dt.year == current_year and dt.month == current_month:
+                    this_month_revenue += price
+                if dt.year == current_year:
+                    this_year_revenue += price
+                if dt.date() == today:
+                    today_revenue += price
+
     mkm_data = fetch_mkm_sheet_csv()
     if len(mkm_data) >= 3:
         headers = [h.strip().upper() for h in mkm_data[0]]
@@ -378,6 +412,32 @@ def companies_revenue(current_user=Depends(get_current_user)):
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
                     
     # Add MKM aggregate sales
+
+    # Add MKM detailed orders
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        
+        dt = parse_date(row[8])
+        portal = normalize_portal(row[4])
+        price = parse_price(row[26])
+        
+        if price > 0:
+            portals["total"][portal] = portals["total"].get(portal, 0) + price
+            counts["total"][portal] = counts["total"].get(portal, 0) + 1
+            if dt:
+                if dt.year == current_year and dt.month == current_month:
+                    portals["thisMonth"][portal] = portals["thisMonth"].get(portal, 0) + price
+                    counts["thisMonth"][portal] = counts["thisMonth"].get(portal, 0) + 1
+                if dt.year == current_year:
+                    portals["thisYear"][portal] = portals["thisYear"].get(portal, 0) + price
+                    counts["thisYear"][portal] = counts["thisYear"].get(portal, 0) + 1
+                if dt.date() == today:
+                    portals["today"][portal] = portals["today"].get(portal, 0) + price
+                    counts["today"][portal] = counts["today"].get(portal, 0) + 1
+
     mkm_data = fetch_mkm_sheet_csv()
     if len(mkm_data) >= 3:
         headers = [h.strip().upper() for h in mkm_data[0]]
@@ -462,6 +522,25 @@ def revenue_chart(current_user=Depends(get_current_user)):
             monthly_data[month_label]["order_count"] += 1
             
     # Add MKM aggregate sales
+
+    # Add MKM detailed orders
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        
+        dt = parse_date(row[8])
+        portal = normalize_portal(row[4])
+        price = parse_price(row[26])
+        
+        if dt and price > 0:
+            month_label = dt.strftime("%b %Y")
+            if month_label not in monthly_data:
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
+            monthly_data[month_label]["order_count"] += 1
+
     mkm_data = fetch_mkm_sheet_csv()
     if len(mkm_data) >= 3:
         headers = [h.strip().upper() for h in mkm_data[0]]
@@ -539,6 +618,20 @@ def recent_orders(current_user=Depends(get_current_user)):
             "_dt": dt or datetime.min
         })
         
+
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        dt = parse_date(row[8])
+        if dt:
+            valid_orders.append({
+                "platform": normalize_portal(row[4]),
+                "customer": row[6].strip() if len(row) > 6 else "",
+                "amount": parse_price(row[26]),
+                "order_date": row[8].strip() if len(row) > 8 else "",
+                "_dt": dt
+            })
+
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     
     # Remove _dt
@@ -594,6 +687,20 @@ def today_orders(current_user=Depends(get_current_user)):
             "_dt": dt
         })
         
+
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        dt = parse_date(row[8])
+        if dt and dt.date() == today:
+            valid_orders.append({
+                "platform": normalize_portal(row[4]),
+                "customer": row[6].strip() if len(row) > 6 else "",
+                "amount": parse_price(row[26]),
+                "order_date": row[8].strip() if len(row) > 8 else "",
+                "_dt": dt
+            })
+
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     
     for o in valid_orders:
