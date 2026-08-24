@@ -90,6 +90,7 @@ def fetch_mkm_orders_sheet_csv():
 
     if needs_fetch:
         url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiemI7xv-XbL0WHtwPU4lsTpC1Xnssb8SKAYZHfVhjZqOjUinM59FxJRBLEd8_aghEbFxZhoKz-MQa/pub?output=csv&gid=277725317"
+        url += f"&_cb={int(time.time())}"
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             response = urllib.request.urlopen(req)
@@ -103,15 +104,16 @@ def fetch_mkm_orders_sheet_csv():
         with _CACHE_LOCK:
             if data is not None:
                 _CACHE[sheet_name] = (time.time(), data)
-            del _FETCH_EVENTS[sheet_name]
+            if sheet_name in _FETCH_EVENTS:
+                del _FETCH_EVENTS[sheet_name]
         event.set()
+        return data or []
     else:
         event.wait()
-        
-    with _CACHE_LOCK:
-        if sheet_name in _CACHE:
-            return _CACHE[sheet_name][1]
-        return []
+        with _CACHE_LOCK:
+            if sheet_name in _CACHE:
+                return _CACHE[sheet_name][1]
+            return []
 
 
 def fetch_mkm_sheet_csv():
