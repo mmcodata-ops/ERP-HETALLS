@@ -7,6 +7,17 @@ from datetime import datetime
 from auth import get_current_user
 import time
 import threading
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+def _get_session():
+    session = requests.Session()
+    retry = Retry(total=5, backoff_factor=1, status_forcelist=[409, 429, 500, 502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -29,11 +40,11 @@ def _fetch_from_google(sheet_name):
     # Add a cache buster to bypass Google CDN and local proxies
     url += f"&_cb={int(time.time())}"
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=15) as response:
-            content = response.read().decode('utf-8')
-            data = list(csv.reader(StringIO(content)))
-            return data
+        session = _get_session()
+        response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()
+        data = list(csv.reader(StringIO(response.text)))
+        return data
     except Exception as e:
         print(f"Error fetching sheet {sheet_name}: {e}")
         return None
@@ -94,9 +105,10 @@ def fetch_mkm_orders_sheet_csv():
         url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiemI7xv-XbL0WHtwPU4lsTpC1Xnssb8SKAYZHfVhjZqOjUinM59FxJRBLEd8_aghEbFxZhoKz-MQa/pub?output=csv&gid=277725317"
         url += f"&_cb={int(time.time())}"
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            response = urllib.request.urlopen(req)
-            csv_data = response.read().decode('utf-8')
+            session = _get_session()
+            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response.raise_for_status()
+            csv_data = response.text
             reader = csv.reader(csv_data.splitlines())
             data = list(reader)
         except Exception as e:
@@ -138,10 +150,10 @@ def fetch_mkm_sheet_csv():
     if needs_fetch:
         url = MKM_SHEET_URL + f"&_cb={int(time.time())}"
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=15) as response:
-                content = response.read().decode('utf-8')
-                data = list(csv.reader(StringIO(content)))
+            session = _get_session()
+            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response.raise_for_status()
+            data = list(csv.reader(StringIO(response.text)))
         except Exception as e:
             print(f"Error fetching MKM sheet: {e}")
             data = None
@@ -180,10 +192,10 @@ def fetch_carpet_sheet_csv():
     if needs_fetch:
         url = CARPET_SHEET_URL + f"&_cb={int(time.time())}"
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=15) as response:
-                content = response.read().decode('utf-8')
-                data = list(csv.reader(StringIO(content)))
+            session = _get_session()
+            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response.raise_for_status()
+            data = list(csv.reader(StringIO(response.text)))
         except Exception as e:
             print(f"Error fetching CARPET sheet: {e}")
             data = None
