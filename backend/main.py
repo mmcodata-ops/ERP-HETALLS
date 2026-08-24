@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from database import create_tables
-from routers import auth, dashboard, users, orders, inventory, accounts, reports, payroll, breakdown, audit, messaging
+from routers import auth, dashboard, users, orders, inventory, accounts, hr, reports, payroll, breakdown, audit, messaging
 
 app = FastAPI(title="Rugs ERP API", version="1.0.0")
 
