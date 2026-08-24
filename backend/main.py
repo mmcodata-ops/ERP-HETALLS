@@ -62,6 +62,20 @@ try:
             department="IT"
         )
         db.add(admin)
+        
+    # Give the user QUICK ACCESS by hardcoding their personal account to survive database wipes
+    shyoji = db.query(User).filter(User.email == "shyoji.ram.(it)@hetalls.com").first()
+    if not shyoji:
+        shyoji = User(
+            name="SHYOJI RAM (IT)",
+            email="shyoji.ram.(it)@hetalls.com",
+            hashed_password=hash_password("123"),
+            role="admin",
+            permissions=['dashboard', 'ecommerce', 'inventory', 'accounts', 'hr', 'reports'],
+            department="IT"
+        )
+        db.add(shyoji)
+        
     db.commit()
     db.close()
 except Exception as e:
