@@ -364,24 +364,6 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
                 if dt.date() == today:
                     today_rev += price
 
-    mkm_data = fetch_mkm_sheet_csv()
-    if len(mkm_data) >= 3:
-        headers = [h.strip().upper() for h in mkm_data[0]]
-        for row in mkm_data[2:]:
-            if not row or not row[0].strip(): continue
-            dt = parse_date(row[0])
-            if not dt: continue
-            
-            if len(row) > 1:
-                daily_mkm_rev = parse_price(row[1])
-                
-                total_revenue += daily_mkm_rev
-            if fy_start <= dt <= fy_end:
-                this_year_rev += daily_mkm_rev
-            if dt.year == current_year and dt.month == current_month:
-                this_month_rev += daily_mkm_rev
-            if dt.date() == now.date():
-                today_rev += daily_mkm_rev
 
     return {
         "total_revenue":     round(total_revenue, 2),
@@ -484,26 +466,6 @@ def companies_revenue(current_user=Depends(get_current_user)):
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
 
-    mkm_data = fetch_mkm_sheet_csv()
-    if len(mkm_data) >= 3:
-        headers = [h.strip().upper() for h in mkm_data[0]]
-        for row in mkm_data[2:]:
-            if not row or not row[0].strip(): continue
-            dt = parse_date(row[0])
-            if not dt: continue
-            
-            if len(row) > 1:
-                portal = "ETSY-MKM"
-                price = parse_price(row[1])
-                
-                if price > 0:
-                    portals["total"][portal] = portals["total"].get(portal, 0) + price
-                    if fy_start <= dt <= fy_end:
-                        portals["year"][portal] = portals["year"].get(portal, 0) + price
-                    if dt.year == current_year and dt.month == current_month:
-                        portals["month"][portal] = portals["month"].get(portal, 0) + price
-                    if dt.date() == today:
-                        portals["today"][portal] = portals["today"].get(portal, 0) + price
                     
     results = {"total": [], "today": [], "month": [], "year": []}
     for key in portals:
@@ -587,23 +549,6 @@ def revenue_chart(current_user=Depends(get_current_user)):
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
             monthly_data[month_label]["order_count"] += 1
 
-    mkm_data = fetch_mkm_sheet_csv()
-    if len(mkm_data) >= 3:
-        headers = [h.strip().upper() for h in mkm_data[0]]
-        for row in mkm_data[2:]:
-            if not row or not row[0].strip(): continue
-            dt = parse_date(row[0])
-            if not dt: continue
-            
-            month_label = dt.strftime("%b %Y")
-            if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
-                
-            if len(row) > 1:
-                portal = "ETSY-MKM"
-                price = parse_price(row[1])
-                if price > 0:
-                    monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
             
     # Sort by date
     sorted_months = sorted(monthly_data.values(), key=lambda x: x["_dt"])
