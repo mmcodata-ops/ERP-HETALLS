@@ -475,7 +475,6 @@ def companies_revenue(current_user=Depends(get_current_user)):
         
         if price > 0:
             portals["total"][portal] = portals["total"].get(portal, 0) + price
-            counts["total"][portal] = counts["total"].get(portal, 0) + 1
             if dt:
                 if fy_start <= dt <= fy_end:
                     portals["year"][portal] = portals["year"].get(portal, 0) + price
