@@ -512,7 +512,7 @@ export default function Dashboard() {
   useEffect(() => {
     let interval;
     if (showBreakdown) {
-      interval = setInterval(() => {
+      // interval = setInterval(() => {
         let url = bdTab;
         if (bdTab === 'custom') {
           url = bdCustomDate;
@@ -521,9 +521,8 @@ export default function Dashboard() {
         axios.get(`${API}/api/breakdown/daily-sales?date=${url}&_=${Date.now()}`)
           .then(res => setBdData(res.data))
           .catch(console.error);
-      }, 15000); // Poll every 15 seconds
+      // }, 15000); // Poll every 15 seconds
     }
-    return () => clearInterval(interval);
   }, [showBreakdown, bdTab, bdCustomDate, bdCustomEndDate, API])
 
   const fetchBreakdown = (dateParam) => {
@@ -623,10 +622,8 @@ export default function Dashboard() {
     };
 
     fetchAll(true);
-    const interval = setInterval(() => fetchAll(false), 5000);
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
   }, [API]);
 
