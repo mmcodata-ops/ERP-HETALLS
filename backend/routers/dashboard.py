@@ -29,7 +29,7 @@ CARPET_SHEET_URL = "https://docs.google.com/spreadsheets/d/11NAw3BWNt3Bwcl1OqDv2
 _CACHE = {}
 _CACHE_LOCK = threading.Lock()
 _FETCH_EVENTS = {}
-CACHE_TTL = 10 # 10 seconds for near-live data
+CACHE_TTL = 86400 # 24 hours (background thread handles updates)
 
 def _fetch_from_google(sheet_name):
     if "{}" in SHEET_URL_TEMPLATE:
@@ -49,10 +49,10 @@ def _fetch_from_google(sheet_name):
         print(f"Error fetching sheet {sheet_name}: {e}")
         return None
 
-def fetch_sheet_csv(sheet_name):
+def fetch_sheet_csv(sheet_name, force=False):
     now = time.time()
     with _CACHE_LOCK:
-        if sheet_name in _CACHE:
+        if not force and sheet_name in _CACHE:
             cached_time, data = _CACHE[sheet_name]
             if now - cached_time <= CACHE_TTL:
                 return data
@@ -79,16 +79,16 @@ def fetch_sheet_csv(sheet_name):
     else:
         event.wait(timeout=20)
         with _CACHE_LOCK:
-            if sheet_name in _CACHE:
+            if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
             return []
 
 
-def fetch_mkm_orders_sheet_csv():
+def fetch_mkm_orders_sheet_csv(force=False):
     now = time.time()
     sheet_name = "MKM_ORDERS"
     with _CACHE_LOCK:
-        if sheet_name in _CACHE:
+        if not force and sheet_name in _CACHE:
             cached_time, data = _CACHE[sheet_name]
             if now - cached_time <= CACHE_TTL:
                 return data
@@ -125,7 +125,7 @@ def fetch_mkm_orders_sheet_csv():
     else:
         event.wait()
         with _CACHE_LOCK:
-            if sheet_name in _CACHE:
+            if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
             return []
 
@@ -134,7 +134,7 @@ def fetch_mkm_sheet_csv():
     now = time.time()
     sheet_name = "MKM_DAILY"
     with _CACHE_LOCK:
-        if sheet_name in _CACHE:
+        if not force and sheet_name in _CACHE:
             cached_time, data = _CACHE[sheet_name]
             if now - cached_time <= CACHE_TTL:
                 return data
@@ -168,15 +168,15 @@ def fetch_mkm_sheet_csv():
     else:
         event.wait()
         with _CACHE_LOCK:
-            if sheet_name in _CACHE:
+            if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
             return []
 
-def fetch_carpet_sheet_csv():
+def fetch_carpet_sheet_csv(force=False):
     now = time.time()
     sheet_name = "CARPET_ORDERS"
     with _CACHE_LOCK:
-        if sheet_name in _CACHE:
+        if not force and sheet_name in _CACHE:
             cached_time, data = _CACHE[sheet_name]
             if now - cached_time <= CACHE_TTL:
                 return data
@@ -211,7 +211,7 @@ def fetch_carpet_sheet_csv():
     else:
         event.wait(timeout=20)
         with _CACHE_LOCK:
-            if sheet_name in _CACHE:
+            if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
             return []
 
@@ -711,3 +711,20 @@ def today_orders(current_user=Depends(get_current_user)):
         del o["_dt"]
         
     return valid_orders
+
+
+# Background thread to keep data fresh instantly
+def background_sheet_sync():
+    import time
+    time.sleep(2) # initial delay
+    while True:
+        try:
+            fetch_sheet_csv("ORDERS", force=True)
+            fetch_mkm_orders_sheet_csv(force=True)
+            fetch_carpet_sheet_csv(force=True)
+        except Exception as e:
+            print("Background sync error:", e)
+        time.sleep(15) # Refresh exactly every 15 seconds!
+
+import threading
+threading.Thread(target=background_sheet_sync, daemon=True).start()
