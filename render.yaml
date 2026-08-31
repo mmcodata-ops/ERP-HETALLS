@@ -1,6 +1,7 @@
 services:
   - type: web
     name: hetalls-erp-b
+    autoDeploy: true
     env: python
     rootDir: backend
     buildCommand: "pip install -r requirements.txt"
@@ -13,6 +14,7 @@ services:
 
   - type: web
     name: hetalls-erp
+    autoDeploy: true
     env: static
     rootDir: frontend
     buildCommand: "npm install && npm run build"
@@ -24,6 +26,7 @@ services:
         fromService:
           type: web
           name: hetalls-erp-b
+    autoDeploy: true
           envVarKey: RENDER_EXTERNAL_URL
     routes:
       - type: rewrite
