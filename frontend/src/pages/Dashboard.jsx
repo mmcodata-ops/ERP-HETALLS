@@ -858,14 +858,14 @@ export default function Dashboard() {
               <div className="card-subtitle">All Companies — Monthly Brands</div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={400}>
             <ComposedChart data={revenueChart || []} margin={{ top: 15, right: 20, left: 0, bottom: 0 }} maxBarSize={45}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />
-              <Tooltip content={<ProgressChartTooltip data={revenueChart} />} itemSorter={(item) => -Number(item.value || 0)} cursor={false} />
-              <Legend align="center" wrapperStyle={{ fontSize: 12 }} />
+              <Tooltip content={<ProgressChartTooltip data={revenueChart} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
+              <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
               {allChartPortals.map((portal, idx) => (
                 <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" />
