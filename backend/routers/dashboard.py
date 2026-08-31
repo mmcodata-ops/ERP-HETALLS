@@ -41,7 +41,7 @@ def _fetch_from_google(sheet_name):
     url += f"&_cb={int(time.time())}"
     try:
         session = _get_session()
-        response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+        response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
         response.raise_for_status()
         data = list(csv.reader(StringIO(response.text)))
         return data
@@ -77,7 +77,7 @@ def fetch_sheet_csv(sheet_name, force=False):
         finally:
             event.set()
     else:
-        event.wait(timeout=20)
+        event.wait(timeout=10)
         with _CACHE_LOCK:
             if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
@@ -106,7 +106,7 @@ def fetch_mkm_orders_sheet_csv(force=False):
         url += f"&_cb={int(time.time())}"
         try:
             session = _get_session()
-            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
             response.raise_for_status()
             csv_data = response.text
             reader = csv.reader(csv_data.splitlines())
@@ -123,7 +123,7 @@ def fetch_mkm_orders_sheet_csv(force=False):
         event.set()
         return data or []
     else:
-        event.wait()
+        event.wait(timeout=10)
         with _CACHE_LOCK:
             if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
@@ -151,7 +151,7 @@ def fetch_mkm_sheet_csv():
         url = MKM_SHEET_URL + f"&_cb={int(time.time())}"
         try:
             session = _get_session()
-            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
             response.raise_for_status()
             data = list(csv.reader(StringIO(response.text)))
         except Exception as e:
@@ -166,7 +166,7 @@ def fetch_mkm_sheet_csv():
         event.set()
         return data or []
     else:
-        event.wait()
+        event.wait(timeout=10)
         with _CACHE_LOCK:
             if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
@@ -193,7 +193,7 @@ def fetch_carpet_sheet_csv(force=False):
         url = CARPET_SHEET_URL + f"&_cb={int(time.time())}"
         try:
             session = _get_session()
-            response = session.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
             response.raise_for_status()
             data = list(csv.reader(StringIO(response.text)))
         except Exception as e:
@@ -209,7 +209,7 @@ def fetch_carpet_sheet_csv(force=False):
             event.set()
         return data or []
     else:
-        event.wait(timeout=20)
+        event.wait(timeout=10)
         with _CACHE_LOCK:
             if not force and sheet_name in _CACHE:
                 return _CACHE[sheet_name][1]
@@ -686,7 +686,7 @@ def background_sheet_sync():
             fetch_carpet_sheet_csv(force=True)
         except Exception as e:
             print("Background sync error:", e)
-        time.sleep(15) # Refresh exactly every 15 seconds!
+        time.sleep(60) # Refresh every 60 seconds to avoid Google Rate Limits
 
 import threading
 threading.Thread(target=background_sheet_sync, daemon=True).start()
