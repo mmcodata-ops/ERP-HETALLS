@@ -591,11 +591,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     let isMounted = true;
-    let isServerDown = false;
     const fetchAll = (isInitial = false) => {
       if (isInitial) setLoading(true);
       const t = Date.now();
-      Promise.all([
+      Promise.allSettled([
         axios.get(`${API}/api/dashboard/kpis?_t=${t}`),
         axios.get(`${API}/api/dashboard/revenue-chart?_t=${t}`),
         axios.get(`${API}/api/dashboard/recent-orders?_t=${t}`),
@@ -603,27 +602,19 @@ export default function Dashboard() {
         axios.get(`${API}/api/dashboard/companies-revenue?_t=${t}`),
       ]).then(([k, r, o, tData, c]) => {
         if (!isMounted) return;
-        if (isServerDown) {
-          window.location.reload();
-          return;
-        }
-        setKpis(k.data);
-        setRevenueChart(r.data);
-        setRecentOrders(o.data);
-        setTodayOrders(tData.data);
-        setCompaniesRev(c.data);
+        if (k.status === 'fulfilled') setKpis(k.value.data);
+        if (r.status === 'fulfilled') setRevenueChart(r.value.data);
+        if (o.status === 'fulfilled') setRecentOrders(o.value.data);
+        if (tData.status === 'fulfilled') setTodayOrders(tData.value.data);
+        if (c.status === 'fulfilled') setCompaniesRev(c.value.data);
         setLastRefreshed(new Date());
-      }).catch((err) => {
-        console.error(err);
-        isServerDown = true;
-      })
-        .finally(() => {
-          if (isMounted && isInitial) setLoading(false);
-        });
+      }).finally(() => {
+        if (isMounted && isInitial) setLoading(false);
+      });
     };
 
     fetchAll(true);
-    const interval = setInterval(() => fetchAll(false), 5000);
+    const interval = setInterval(() => fetchAll(false), 30000);
     return () => {
       isMounted = false;
       clearInterval(interval);
