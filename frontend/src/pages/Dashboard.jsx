@@ -94,7 +94,7 @@ const ProgressChartTooltip = ({ active, payload, label, data }) => {
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
       <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
-      {[...portalItems].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0)).map((p, i) => {
+      {[...portalItems].filter(p => Number(p.value) > 0).sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
