@@ -512,7 +512,7 @@ export default function Dashboard() {
   useEffect(() => {
     let interval;
     if (showBreakdown) {
-      // interval = setInterval(() => {
+      interval = setInterval(() => {
         let url = bdTab;
         if (bdTab === 'custom') {
           url = bdCustomDate;
@@ -521,8 +521,9 @@ export default function Dashboard() {
         axios.get(`${API}/api/breakdown/daily-sales?date=${url}&_=${Date.now()}`)
           .then(res => setBdData(res.data))
           .catch(console.error);
-      // }, 15000); // Poll every 15 seconds
+      }, 5000); // Poll every 5 seconds
     }
+    return () => clearInterval(interval);
   }, [showBreakdown, bdTab, bdCustomDate, bdCustomEndDate, API])
 
   const fetchBreakdown = (dateParam) => {
@@ -622,8 +623,10 @@ export default function Dashboard() {
     };
 
     fetchAll(true);
+    const interval = setInterval(() => fetchAll(false), 5000);
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [API]);
 
@@ -828,7 +831,7 @@ export default function Dashboard() {
           {companiesRev?.today && companiesRev.today.length > 0 ? (
             <ResponsiveContainer width="100%" height={320}>
               <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <Pie
+                <Pie isAnimationActive={false}
                   data={companiesRev.today}
                   dataKey="value"
                   nameKey="name"
@@ -872,9 +875,9 @@ export default function Dashboard() {
               <Legend align="center" wrapperStyle={{ fontSize: 12 }} />
               
               {allChartPortals.map((portal, idx) => (
-                <Bar yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" />
+                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" />
               ))}
-              <Line yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
+              <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
