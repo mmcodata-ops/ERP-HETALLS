@@ -23,6 +23,7 @@ export const PORTAL_COLORS_MAP = {
   "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe",
   "AMAZON (HETALLS)": "#c084fc",
   "ETSY (HETALLS)": "#fb7185",
+  "EBAY (HETALLS)": "#22d3ee",
   "UNKNOWN": "#6b7280"
 };
 export const FALLBACK_COLORS = ["#6366f1", "#14b8a6", "#f43f5e", "#84cc16", "#d946ef", "#eab308", "#0ea5e9", "#f97316", "#a855f7"];
@@ -703,7 +704,11 @@ export default function Dashboard() {
 
   const formatPortalName = (portal) => {
     if (!portal) return "";
-    return portal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ').replace('Ebay-rugsforever', 'Ebay-Rugsforever').replace('Etsy-casavani', 'Etsy-Casavani').replace('Etsy-rugsforever', 'Etsy-Rugsforever');
+    let formatted = portal.split(' ').map(w => {
+      if (w === "(HETALLS)" || w === "(CARPET)") return w;
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }).join(' ');
+    return formatted.replace('Ebay-rugsforever', 'Ebay-Rugsforever').replace('Etsy-casavani', 'Etsy-Casavani').replace('Etsy-rugsforever', 'Etsy-Rugsforever');
   };
 
   return (
@@ -877,7 +882,7 @@ export default function Dashboard() {
               <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
               {allChartPortals.map((portal, idx) => (
-                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" />
+                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} />
               ))}
               <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
             </ComposedChart>
