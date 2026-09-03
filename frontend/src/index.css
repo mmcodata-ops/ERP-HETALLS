@@ -187,7 +187,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ─── KPI Cards ─────────────────────────────────────────────────────── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1025,7 +1025,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     padding: 16px !important;
   }
   .kpi-grid {
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(6, 1fr) !important;
     gap: 16px !important;
   }
   .table-wrapper, .breakdown-table-wrapper {

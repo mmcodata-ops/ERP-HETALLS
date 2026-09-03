@@ -21,6 +21,8 @@ export const PORTAL_COLORS_MAP = {
   "AMAZON (CARPET)": "#fde68a",
   "ETSY-CASAVANI (CARPET)": "#fecaca",
   "ETSY-RUGSFOREVER (CARPET)": "#bfdbfe",
+  "AMAZON (HETALLS)": "#c084fc",
+  "ETSY (HETALLS)": "#fb7185",
   "UNKNOWN": "#6b7280"
 };
 export const FALLBACK_COLORS = ["#6366f1", "#14b8a6", "#f43f5e", "#84cc16", "#d946ef", "#eab308", "#0ea5e9", "#f97316", "#a855f7"];
@@ -676,19 +678,26 @@ export default function Dashboard() {
         <div className="cube-face"><div style={{ width: '100%', height: '100%' }}><KPICard icon={TrendingUp} label="Orders This Year" value={kpis?.this_year_orders} sub="Year to date" colorClass="success" /></div></div>
       </div>
     </div>,
-    <KPICard key="emp" icon={Users} label="Active Employees" value={kpis?.total_employees ?? 0} sub="Across all departments" colorClass="green" style={{ viewTransitionName: 'kpi-emp' }} />,
 
     <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', height: '100%', viewTransitionName: 'kpi-break' }}>
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
     </div>,
 
-    <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }} />
+    <KPICard key="htl-rev" icon={DollarSign} label="HETALLS Revenue"
+      value={`$${(companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + c.value, 0) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+      sub="Today only" colorClass="purple" format="text" style={{ viewTransitionName: 'kpi-htl-rev' }} />,
+
+    <KPICard key="htl-ord" icon={ShoppingCart} label="HETALLS Orders"
+      value={companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + (c.order_count || 0), 0) || 0}
+      sub="Today only" colorClass="pink" style={{ viewTransitionName: 'kpi-htl-ord' }} />,
+
+    <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }}/>
   ];
 
 
   const shiftedElements = [];
-  for (let i = 0; i < 5; i++) {
-    shiftedElements.push(kpiElements[(i - shiftOffset + 5) % 5]);
+  for (let i = 0; i < kpiElements.length; i++) {
+    shiftedElements.push(kpiElements[(i - shiftOffset + kpiElements.length) % kpiElements.length]);
   }
 
 

@@ -25,6 +25,8 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 SHEET_URL_TEMPLATE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkTIObrXy88vQVg2_bAI2T8vPa1tXT5IWZw8tdvF9BW7aYj9qqTA6WeZjpJHlBlw4dpTj_o7dYhtzW/pub?gid=978055065&single=true&output=csv"
 MKM_SHEET_URL = "https://docs.google.com/spreadsheets/d/1NZo52WV0ynaYe-G2WrZ5ItRwPmNKjdwhr_GOyztAz8U/export?format=csv&gid=663408233"
 CARPET_SHEET_URL = "https://docs.google.com/spreadsheets/d/11NAw3BWNt3Bwcl1OqDv2EyL5WSLN1wZUg4qziq8SRDM/export?format=csv&gid=1394514115"
+HETALLS_SHEET_BASE = "https://docs.google.com/spreadsheets/d/1JBOBE5pkjbKMv3F8dIXIDPBI7jKXxduTjKWDQz4VrGM/export?format=csv&gid="
+HETALLS_GIDS = ["528257396", "14872727"]  # August-2026, September-2026
 
 _CACHE = {}
 _CACHE_LOCK = threading.Lock()
@@ -215,6 +217,37 @@ def fetch_carpet_sheet_csv(force=False):
                 return _CACHE[sheet_name][1]
             return []
 
+def fetch_hetalls_sheet_csv(force=False):
+    sheet_name = "HETALLS_ORDERS"
+    now = time.time()
+    with _CACHE_LOCK:
+        if not force and sheet_name in _CACHE:
+            cached_time, data = _CACHE[sheet_name]
+            if now - cached_time <= CACHE_TTL:
+                return data
+
+    # Fetch all monthly tabs and merge
+    all_rows = []
+    header = None
+    session = _get_session()
+    for gid in HETALLS_GIDS:
+        url = HETALLS_SHEET_BASE + gid + f"&_cb={int(time.time())}"
+        try:
+            response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+            response.raise_for_status()
+            rows = list(csv.reader(StringIO(response.text)))
+            if rows:
+                if header is None:
+                    header = rows[0]
+                all_rows.extend(rows[1:])  # skip header of each tab
+        except Exception as e:
+            print(f"Error fetching Hetalls gid={gid}: {e}")
+
+    data = [header] + all_rows if header else []
+    with _CACHE_LOCK:
+        _CACHE[sheet_name] = (time.time(), data)
+    return data
+
 def parse_price(val_str):
     try:
         if not val_str: return 0.0
@@ -370,6 +403,30 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
                     today_rev += price
 
 
+    # Add Hetalls orders
+    hetalls_data = fetch_hetalls_sheet_csv()
+    for row in hetalls_data[1:]:
+        if len(row) < 37: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        price = parse_price(row[36])
+        total_revenue += price
+        total_orders += 1
+        dt = parse_date(row[8])
+        if dt:
+            d = dt.date()
+            orders_by_date[d] = orders_by_date.get(d, 0) + 1
+            if fy_start <= dt <= fy_end:
+                this_year += 1
+                this_year_rev += price
+            if dt.year == current_year and dt.month == current_month:
+                this_month += 1
+                this_month_rev += price
+            if dt.date() == now.date():
+                today += 1
+                today_rev += price
+
+
     return {
         "total_revenue":     round(total_revenue, 2),
         "this_year_revenue": round(this_year_rev, 2),
@@ -471,6 +528,27 @@ def companies_revenue(current_user=Depends(get_current_user)):
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
 
+    # Add Hetalls orders
+    hetalls_data = fetch_hetalls_sheet_csv()
+    for row in hetalls_data[1:]:
+        if len(row) < 37: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8])
+        portal = normalize_portal(row[4])
+        portal = f"{portal} (HETALLS)"
+        price = parse_price(row[36])
+        if price > 0:
+            portals["total"][portal] = portals["total"].get(portal, 0) + price
+            if dt:
+                if fy_start <= dt <= fy_end:
+                    portals["year"][portal] = portals["year"].get(portal, 0) + price
+                if dt.year == current_year and dt.month == current_month:
+                    portals["month"][portal] = portals["month"].get(portal, 0) + price
+                if dt.date() == today:
+                    portals["today"][portal] = portals["today"].get(portal, 0) + price
+                    counts["today"][portal] = counts["today"].get(portal, 0) + 1
+
                     
     results = {"total": [], "today": [], "month": [], "year": []}
     for key in portals:
@@ -554,6 +632,23 @@ def revenue_chart(current_user=Depends(get_current_user)):
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
             monthly_data[month_label]["order_count"] += 1
 
+    # Add Hetalls orders
+    hetalls_data = fetch_hetalls_sheet_csv()
+    for row in hetalls_data[1:]:
+        if len(row) < 37: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8])
+        portal = normalize_portal(row[4])
+        portal = f"{portal} (HETALLS)"
+        price = parse_price(row[36])
+        if dt and price > 0:
+            month_label = dt.strftime("%b %Y")
+            if month_label not in monthly_data:
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
+            monthly_data[month_label]["order_count"] += 1
+
             
     # Sort by date
     sorted_months = sorted(monthly_data.values(), key=lambda x: x["_dt"])
@@ -617,6 +712,22 @@ def recent_orders(current_user=Depends(get_current_user)):
             "_dt": dt or datetime.min
         })
         
+    # Add Hetalls orders
+    hetalls_data = fetch_hetalls_sheet_csv()
+    for i, row in enumerate(hetalls_data[1:]):
+        if len(row) < 37: continue
+        dt = parse_date(row[8])
+        material = row[10].strip() if len(row) > 10 else ""
+        size = row[11].strip() if len(row) > 11 else ""
+        valid_orders.append({
+            "id": f"htl-{i}", "order_id": row[5].strip() if len(row) > 5 else f"HTL-{i}",
+            "platform": normalize_portal(row[4]) + " (HETALLS)" if len(row) > 4 else "UNKNOWN (HETALLS)",
+            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+            "product_name": f"{material} {size}".strip(), "amount": parse_price(row[36]),
+            "status": row[14].strip() if len(row) > 14 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
+            "_dt": dt or datetime.min
+        })
+
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     for o in valid_orders: del o["_dt"]
     return valid_orders[:10]
@@ -670,6 +781,23 @@ def today_orders(current_user=Depends(get_current_user)):
             "_dt": dt
         })
         
+    # Add Hetalls orders
+    hetalls_data = fetch_hetalls_sheet_csv()
+    for i, row in enumerate(hetalls_data[1:]):
+        if len(row) < 37: continue
+        dt = parse_date(row[8])
+        if not dt or dt.date() != today: continue
+        material = row[10].strip() if len(row) > 10 else ""
+        size = row[11].strip() if len(row) > 11 else ""
+        valid_orders.append({
+            "id": f"htl-{i}", "order_id": row[5].strip() if len(row) > 5 else f"HTL-{i}",
+            "platform": normalize_portal(row[4]) + " (HETALLS)" if len(row) > 4 else "UNKNOWN (HETALLS)",
+            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
+            "product_name": f"{material} {size}".strip(), "amount": parse_price(row[36]),
+            "status": row[14].strip() if len(row) > 14 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
+            "_dt": dt
+        })
+
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     for o in valid_orders: del o["_dt"]
     return valid_orders
@@ -684,6 +812,7 @@ def background_sheet_sync():
             fetch_sheet_csv("ORDERS", force=True)
             fetch_mkm_orders_sheet_csv(force=True)
             fetch_carpet_sheet_csv(force=True)
+            fetch_hetalls_sheet_csv(force=True)
         except Exception as e:
             print("Background sync error:", e)
         time.sleep(60) # Refresh every 60 seconds to avoid Google Rate Limits
