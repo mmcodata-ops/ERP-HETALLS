@@ -67,14 +67,23 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-const ProgressChartTooltip = ({ active, payload, label, data }) => {
-  if (!active || !payload?.length) return null
-  const currentDataIndex = data?.findIndex(d => d.month === label) ?? -1
-  const previousData = currentDataIndex > 0 ? data[currentDataIndex - 1] : null
-  
-  const portalItems = payload.filter(p => p.name !== 'Sales Count')
-  const salesCountItem = payload.find(p => p.name === 'Sales Count')
-  const total = portalItems.reduce((sum, p) => sum + (Number(p.value) || 0), 0)
+const ProgressChartTooltip = ({ active, payload, label, data, hoveredStack }) => {
+  if (!active || !payload || !payload.length) return null
+
+  const portalItems = payload.filter(p => p.dataKey !== 'order_count' && p.dataKey !== 'month' && p.dataKey !== '_dt')
+  const salesCountItem = payload.find(p => p.dataKey === 'order_count')
+  const currentIndex = data.findIndex(d => d.month === label)
+  const previousData = currentIndex > 0 ? data[currentIndex - 1] : null
+
+  // Filter based on hovered stack
+  const filteredItems = [...portalItems].filter(p => {
+    if (!Number(p.value)) return false;
+    if (hoveredStack === 'b') return p.dataKey.toUpperCase().includes('HETALLS');
+    if (hoveredStack === 'a') return !p.dataKey.toUpperCase().includes('HETALLS');
+    return true;
+  });
+
+  const total = filteredItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0)
 
   const getPercentageStr = (prev, curr) => {
     if (prev > 0) {
@@ -97,7 +106,7 @@ const ProgressChartTooltip = ({ active, payload, label, data }) => {
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
       <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
-      {[...portalItems].filter(p => Number(p.value) > 0).sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
+      {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
@@ -376,9 +385,54 @@ function PlatformPill({ platform }) {
 }
 
 // ── Dashboard Page ────────────────────────────────────────────────────
+const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurrency }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', cursor: 'pointer', viewTransitionName: `kpi-${label.replace(/ /g, '-')}` }}
+         onMouseEnter={() => setIsHovered(true)}
+         onMouseLeave={() => setIsHovered(false)}
+         onClick={() => setIsHovered(!isHovered)}
+    >
+      <KPICard icon={icon} label={label} value={value} sub={sub} colorClass={colorClass} format="text" />
+      {isHovered && items && items.length > 0 && (
+        <div style={{
+            position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
+            background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
+            padding: '14px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), var(--glass-shine)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
+              {label} Breakdown:
+            </span>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsHovered(false); }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px', fontSize: '14px', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+            {items.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '12px' }}>
+                <span style={{ color: getPortalColor(c.name, 0), fontWeight: 500 }}>{c.name}</span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>
+                   {isCurrency ? `$${Number(c.value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : c.order_count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { API } = useAuth()
   const [kpis, setKpis] = useState(null)
+  const [hoveredStack, setHoveredStack] = useState(null)
   const [revenueChart, setRevenueChart] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [todayOrders, setTodayOrders] = useState([])
@@ -684,13 +738,15 @@ export default function Dashboard() {
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
     </div>,
 
-    <KPICard key="htl-rev" icon={DollarSign} label="HETALLS Revenue"
+    <HetallsPopupCard key="htl-rev" icon={DollarSign} label="HETALLS Revenue"
       value={`$${(companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + c.value, 0) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-      sub="Today only" colorClass="purple" format="text" style={{ viewTransitionName: 'kpi-htl-rev' }} />,
+      sub="Today only" colorClass="purple"
+      items={companiesRev?.today?.filter(c => c.name?.includes('HETALLS'))} isCurrency={true} />,
 
-    <KPICard key="htl-ord" icon={ShoppingCart} label="HETALLS Orders"
+    <HetallsPopupCard key="htl-ord" icon={ShoppingCart} label="HETALLS Orders"
       value={companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + (c.order_count || 0), 0) || 0}
-      sub="Today only" colorClass="pink" style={{ viewTransitionName: 'kpi-htl-ord' }} />,
+      sub="Today only" colorClass="pink"
+      items={companiesRev?.today?.filter(c => c.name?.includes('HETALLS'))} isCurrency={false} />,
 
     <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }}/>
   ];
@@ -878,11 +934,11 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />
-              <Tooltip content={<ProgressChartTooltip data={revenueChart} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
+              <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredStack={hoveredStack} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
               <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
               {allChartPortals.map((portal, idx) => (
-                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} />
+                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} onMouseEnter={() => setHoveredStack(portal.toUpperCase().includes('HETALLS') ? 'b' : 'a')} onMouseLeave={() => setHoveredStack(null)} />
               ))}
               <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
             </ComposedChart>
