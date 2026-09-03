@@ -67,7 +67,7 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-const ProgressChartTooltip = ({ active, payload, label, data, hoveredStack }) => {
+const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, tooltipLocked }) => {
   if (!active || !payload || !payload.length) return null
 
   const portalItems = payload.filter(p => p.dataKey !== 'order_count' && p.dataKey !== 'month' && p.dataKey !== '_dt')
@@ -78,9 +78,9 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredStack }) =>
   // Filter based on hovered stack
   const filteredItems = [...portalItems].filter(p => {
     if (!Number(p.value)) return false;
-    if (hoveredStack === 'b') return p.dataKey.toUpperCase().includes('HETALLS');
-    if (hoveredStack === 'a') return !p.dataKey.toUpperCase().includes('HETALLS');
-    return true;
+    if (tooltipLocked) return true; // Show all
+    if (hoveredDataKey) return p.dataKey === hoveredDataKey; // Show individual
+    return true; // Show all if nothing hovered
   });
 
   const total = filteredItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0)
@@ -105,7 +105,7 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredStack }) =>
       backdropFilter: 'blur(32px) saturate(200%)',
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label} {tooltipLocked && <span style={{fontSize: 10, color: 'var(--gold)'}}>(All Data)</span>}</p>
       {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
@@ -117,10 +117,12 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredStack }) =>
           }} />
         )
       })}
-      <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-        <span>Total:</span> <span>${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
-      </div>
-      {salesCountItem && (() => {
+      {tooltipLocked && (
+        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+          <span>Total:</span> <span>${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+        </div>
+      )}
+      {tooltipLocked && salesCountItem && (() => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[salesCountItem.dataKey]) || 0, Number(salesCountItem.value) || 0)
@@ -432,7 +434,8 @@ const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurren
 export default function Dashboard() {
   const { API } = useAuth()
   const [kpis, setKpis] = useState(null)
-  const [hoveredStack, setHoveredStack] = useState(null)
+  const [hoveredDataKey, setHoveredDataKey] = useState(null)
+  const [tooltipLocked, setTooltipLocked] = useState(false)
   const [revenueChart, setRevenueChart] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [todayOrders, setTodayOrders] = useState([])
@@ -708,7 +711,7 @@ export default function Dashboard() {
   const isOrdersUp = (kpis?.today_orders ?? 0) >= (kpis?.yesterday_orders ?? 0);
 
   const kpiElements = [
-    <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev} style={{ viewTransitionName: 'kpi-rev' }} />,
+    <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null} style={{ viewTransitionName: 'kpi-rev' }} />,
     <div 
       key="orders"
       className="cube-container" 
@@ -895,7 +898,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={320}>
               <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <Pie isAnimationActive={false}
-                  data={companiesRev.today}
+                  data={companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS'))}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -929,16 +932,16 @@ export default function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={revenueChart || []} margin={{ top: 15, right: 20, left: 0, bottom: 0 }} maxBarSize={45}>
+            <ComposedChart data={revenueChart || []} margin={{ top: 15, right: 20, left: 0, bottom: 0 }} maxBarSize={45} onClick={() => setTooltipLocked(!tooltipLocked)}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />
-              <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredStack={hoveredStack} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
+              <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredDataKey={hoveredDataKey} tooltipLocked={tooltipLocked} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
               <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
               {allChartPortals.map((portal, idx) => (
-                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} onMouseEnter={() => setHoveredStack(portal.toUpperCase().includes('HETALLS') ? 'b' : 'a')} onMouseLeave={() => setHoveredStack(null)} />
+                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} onMouseEnter={() => setHoveredDataKey(portal)} onMouseLeave={() => setHoveredDataKey(null)} />
               ))}
               <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
             </ComposedChart>

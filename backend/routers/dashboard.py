@@ -404,30 +404,7 @@ def get_kpis(current_user=Depends(get_current_user), db: Session = Depends(get_d
                     today_rev += price
 
 
-    # Add Hetalls orders
-    hetalls_data = fetch_hetalls_sheet_csv()
-    for row in hetalls_data[1:]:
-        if len(row) < 37: continue
-        status = row[14].strip().lower() if len(row) > 14 else ""
-        if status == "returned": continue
-        price = parse_price(row[36])
-        total_revenue += price
-        total_orders += 1
-        dt = parse_date(row[8])
-        if dt:
-            d = dt.date()
-            orders_by_date[d] = orders_by_date.get(d, 0) + 1
-            if fy_start <= dt <= fy_end:
-                this_year += 1
-                this_year_rev += price
-            if dt.year == current_year and dt.month == current_month:
-                this_month += 1
-                this_month_rev += price
-            if dt.date() == now.date():
-                today += 1
-                today_rev += price
-
-
+    
     return {
         "total_revenue":     round(total_revenue, 2),
         "this_year_revenue": round(this_year_rev, 2),
@@ -712,23 +689,7 @@ def recent_orders(current_user=Depends(get_current_user)):
             "status": row[14].strip() if len(row) > 14 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
             "_dt": dt or datetime.min
         })
-        
-    # Add Hetalls orders
-    hetalls_data = fetch_hetalls_sheet_csv()
-    for i, row in enumerate(hetalls_data[1:]):
-        if len(row) < 37: continue
-        dt = parse_date(row[8])
-        material = row[10].strip() if len(row) > 10 else ""
-        size = row[11].strip() if len(row) > 11 else ""
-        valid_orders.append({
-            "id": f"htl-{i}", "order_id": row[5].strip() if len(row) > 5 else f"HTL-{i}",
-            "platform": normalize_portal(row[4]) + " (HETALLS)" if len(row) > 4 else "UNKNOWN (HETALLS)",
-            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
-            "product_name": f"{material} {size}".strip(), "amount": parse_price(row[36]),
-            "status": row[14].strip() if len(row) > 14 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
-            "_dt": dt or datetime.min
-        })
-
+    
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     for o in valid_orders: del o["_dt"]
     return valid_orders[:10]
@@ -781,24 +742,7 @@ def today_orders(current_user=Depends(get_current_user)):
             "status": row[12].strip() if len(row) > 12 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
             "_dt": dt
         })
-        
-    # Add Hetalls orders
-    hetalls_data = fetch_hetalls_sheet_csv()
-    for i, row in enumerate(hetalls_data[1:]):
-        if len(row) < 37: continue
-        dt = parse_date(row[8])
-        if not dt or dt.date() != today: continue
-        material = row[10].strip() if len(row) > 10 else ""
-        size = row[11].strip() if len(row) > 11 else ""
-        valid_orders.append({
-            "id": f"htl-{i}", "order_id": row[5].strip() if len(row) > 5 else f"HTL-{i}",
-            "platform": normalize_portal(row[4]) + " (HETALLS)" if len(row) > 4 else "UNKNOWN (HETALLS)",
-            "customer_name": row[6].strip() if len(row) > 6 else "Unknown",
-            "product_name": f"{material} {size}".strip(), "amount": parse_price(row[36]),
-            "status": row[14].strip() if len(row) > 14 else "Unknown", "order_date": row[8].strip() if len(row) > 8 else "",
-            "_dt": dt
-        })
-
+    
     valid_orders.sort(key=lambda x: x["_dt"], reverse=True)
     for o in valid_orders: del o["_dt"]
     return valid_orders
