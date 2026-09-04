@@ -106,7 +106,7 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
       <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label} {tooltipLocked && <span style={{fontSize: 10, color: 'var(--gold)'}}>(All Data)</span>}</p>
-      {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
+      {!tooltipLocked && filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
@@ -117,11 +117,18 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
           }} />
         )
       })}
-      {tooltipLocked && (
-        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-          <span>Total:</span> <span>${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
-        </div>
-      )}
+      {tooltipLocked && (() => {
+        let percentageStr = ""
+        if (previousData) {
+          const prevTotal = portalItems.reduce((sum, item) => sum + (Number(previousData[item.dataKey]) || 0), 0)
+          percentageStr = getPercentageStr(prevTotal, total)
+        }
+        return (
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
+            __html: `<span>Total:</span> <span>$${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${percentageStr}</span>`
+          }} />
+        )
+      })()}
       {tooltipLocked && salesCountItem && (() => {
         let percentageStr = ""
         if (previousData) {
@@ -807,30 +814,7 @@ export default function Dashboard() {
 
   const kpiElements = [
     <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null} style={{ viewTransitionName: 'kpi-rev' }} />,
-    <div 
-      key="orders"
-      className="cube-container" 
-      onMouseDown={startSpin}
-      onMouseUp={stopSpin}
-      onMouseLeave={stopSpin}
-      onTouchStart={startSpin}
-      onTouchEnd={stopSpin}
-      onDragStart={(e) => e.preventDefault()}
-      style={{ cursor: 'pointer', userSelect: 'none', viewTransitionName: 'kpi-orders' }}
-    >
-      <div 
-        className="cube" 
-        ref={cubeRef}
-        style={{ 
-          transform: `translateZ(-140px) rotateY(${angleRef.current}deg)`, 
-          transition: 'transform 0.4s ease-out' 
-        }}
-      >
-        <div className="cube-face"><div style={{ width: '100%', height: '100%' }}><KPICard icon={isOrdersUp ? TrendingUp : TrendingDown} label="Orders Today" value={kpis?.today_orders} sub="Today only" colorClass={isOrdersUp ? "success" : "danger"} /></div></div>
-        <div className="cube-face"><div style={{ width: '100%', height: '100%' }}><KPICard icon={TrendingUp} label="Orders This Month" value={kpis?.this_month_orders} sub="Month to date" colorClass="warning" /></div></div>
-        <div className="cube-face"><div style={{ width: '100%', height: '100%' }}><KPICard icon={TrendingUp} label="Orders This Year" value={kpis?.this_year_orders} sub="Year to date" colorClass="success" /></div></div>
-      </div>
-    </div>,
+    <OrdersSpinningCard key="orders" kpis={kpis} isOrdersUp={isOrdersUp} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null} style={{ viewTransitionName: 'kpi-orders' }} />,
 
     <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', height: '100%', viewTransitionName: 'kpi-break' }}>
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
