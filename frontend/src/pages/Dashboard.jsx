@@ -387,16 +387,110 @@ function PlatformPill({ platform }) {
 }
 
 // ── Dashboard Page ────────────────────────────────────────────────────
-const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurrency }) => {
+
+const HetallsSpinningCard = ({ companiesRev, isCurrency, style = {} }) => {
+  const [spinCount, setSpinCount] = useState(0);
+  const touchStartX = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  
+  const getVal = (period) => {
+    if (!companiesRev || !companiesRev[period]) return 0;
+    return companiesRev[period].filter(c => c.name?.toUpperCase().includes('HETALLS')).reduce((s, c) => s + (isCurrency ? c.value : (c.order_count || 0)), 0) || 0;
+  }
+  
+  const faces = [
+    { 
+      key: 'today', 
+      label: isCurrency ? "HETALLS Revenue" : "HETALLS Orders", 
+      value: getVal('today'), 
+      sub: "Today only", 
+      icon: isCurrency ? DollarSign : ShoppingCart, 
+      colorClass: isCurrency ? 'purple' : 'pink' 
+    },
+    { 
+      key: 'month', 
+      label: isCurrency ? "HETALLS Month" : "HETALLS Month", 
+      value: getVal('month'), 
+      sub: "Month to date", 
+      icon: isCurrency ? DollarSign : ShoppingCart, 
+      colorClass: isCurrency ? 'purple' : 'pink' 
+    },
+    { 
+      key: 'year', 
+      label: isCurrency ? "HETALLS Year" : "HETALLS Year", 
+      value: getVal('year'), 
+      sub: isCurrency ? "Financial year" : "Year to date", 
+      icon: isCurrency ? DollarSign : ShoppingCart, 
+      colorClass: isCurrency ? 'purple' : 'pink' 
+    },
+  ];
+
+  const getFace = (i) => {
+    let k = spinCount - (spinCount % 3) + i;
+    if (k < spinCount - 1) k += 3;
+    return faces[k % faces.length];
+  };
+
+  const currentFace = faces[spinCount % 3];
+  
+  const currentItems = companiesRev ? companiesRev[currentFace.key]?.filter(c => c.name?.toUpperCase().includes('HETALLS')) : [];
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', cursor: 'pointer', viewTransitionName: `kpi-${label.replace(/ /g, '-')}` }}
-         onMouseEnter={() => setIsHovered(true)}
-         onMouseLeave={() => setIsHovered(false)}
-         onClick={() => setIsHovered(!isHovered)}
+    <div 
+      style={{ position: 'relative', zIndex: isHovered ? 9999 : 1, ...style }}
+      onMouseEnter={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(true); }}
+      onMouseLeave={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(false); }}
     >
-      <KPICard icon={icon} label={label} value={value} sub={sub} colorClass={colorClass} format="text" />
-      {isHovered && items && items.length > 0 && (
+      <div 
+        className="cube-container" 
+        onClick={(e) => { 
+          if (e && e.preventDefault) e.preventDefault(); 
+          const rect = e.currentTarget.getBoundingClientRect();
+          let clientX = e.clientX;
+          if ((clientX === undefined || clientX === 0) && e.nativeEvent?.changedTouches?.length > 0) {
+            clientX = e.nativeEvent.changedTouches[0].clientX;
+          }
+          const isRight = (clientX - rect.left) > rect.width / 2;
+          setSpinCount(c => isRight ? c + 1 : (c - 1 + 300) % 300); 
+          setIsHovered(true);
+        }}
+        onTouchStart={(e) => touchStartX.current = e.touches[0].clientX}
+        onTouchEnd={(e) => {
+          const diff = e.changedTouches[0].clientX - touchStartX.current;
+          if (Math.abs(diff) > 30) {
+            setSpinCount(c => diff > 0 ? (c - 1 + 300) % 300 : c + 1);
+          }
+        }}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <div 
+          className="cube" 
+          style={{ 
+            transform: `translateZ(-140px) rotateY(${spinCount * -120}deg)`, 
+            transition: 'transform 0.4s ease-out' 
+          }}
+        >
+          {[0, 1, 2].map(i => {
+            const f = getFace(i);
+            return (
+              <div key={i} className="cube-face">
+                <div style={{ width: '100%', height: '100%' }}>
+                  <KPICard 
+                    icon={f.icon} 
+                    label={f.label} 
+                    value={f.value} 
+                    sub={f.sub} 
+                    colorClass={f.colorClass} 
+                    format={isCurrency ? "currency" : "number"}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {isHovered && currentItems && currentItems.length > 0 && (
         <div style={{
             position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
             background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
@@ -406,7 +500,7 @@ const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurren
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
-              {label} Breakdown:
+              {currentFace.label} ({currentFace.key}):
             </span>
             <button 
               onClick={(e) => { e.stopPropagation(); setIsHovered(false); }}
@@ -416,9 +510,9 @@ const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurren
             </button>
           </div>
           <div style={{ maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
-            {items.map((c, i) => (
+            {currentItems.map((c, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '12px' }}>
-                <span style={{ color: getPortalColor(c.name, 0), fontWeight: 500 }}>{c.name}</span>
+                <span style={{ color: typeof getPortalColor !== 'undefined' ? getPortalColor(c.name, 0) : '#fff', fontWeight: 500 }}>{c.name}</span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>
                    {isCurrency ? `$${Number(c.value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : c.order_count}
                 </span>
@@ -428,8 +522,8 @@ const HetallsPopupCard = ({ icon, label, value, sub, colorClass, items, isCurren
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 export default function Dashboard() {
   const { API } = useAuth()
@@ -741,15 +835,9 @@ export default function Dashboard() {
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
     </div>,
 
-    <HetallsPopupCard key="htl-rev" icon={DollarSign} label="HETALLS Revenue"
-      value={`$${(companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + c.value, 0) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-      sub="Today only" colorClass="purple"
-      items={companiesRev?.today?.filter(c => c.name?.includes('HETALLS'))} isCurrency={true} />,
+    <HetallsSpinningCard key="htl-rev" companiesRev={companiesRev} isCurrency={true} style={{ viewTransitionName: 'kpi-htl-rev' }} />,
 
-    <HetallsPopupCard key="htl-ord" icon={ShoppingCart} label="HETALLS Orders"
-      value={companiesRev?.today?.filter(c => c.name?.includes('HETALLS')).reduce((s, c) => s + (c.order_count || 0), 0) || 0}
-      sub="Today only" colorClass="pink"
-      items={companiesRev?.today?.filter(c => c.name?.includes('HETALLS'))} isCurrency={false} />,
+    <HetallsSpinningCard key="htl-ord" companiesRev={companiesRev} isCurrency={false} style={{ viewTransitionName: 'kpi-htl-ord' }} />,
 
     <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }}/>
   ];
