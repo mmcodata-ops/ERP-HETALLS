@@ -1038,7 +1038,7 @@ export default function Dashboard() {
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />
+              {chartView === 'hg' && <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />}
               <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredDataKey={hoveredDataKey} tooltipLocked={tooltipLocked} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
               <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
@@ -1047,7 +1047,7 @@ export default function Dashboard() {
                 .map((portal, idx) => (
                 <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" onMouseEnter={() => setHoveredDataKey(portal)} onMouseLeave={() => setHoveredDataKey(null)} />
               ))}
-              <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
+              {chartView === 'hg' && <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
