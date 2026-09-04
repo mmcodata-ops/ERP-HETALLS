@@ -982,11 +982,11 @@ export default function Dashboard() {
               <div className="card-subtitle">Revenue breakdown by portal for today</div>
             </div>
           </div>
-          {companiesRev?.today && companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS')).length > 0 ? (
+          {companiesRev?.today && companiesRev.today.length > 0 ? (
             <ResponsiveContainer width="100%" height={320}>
               <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <Pie isAnimationActive={false}
-                  data={companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS'))}
+                  data={companiesRev.today}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -996,7 +996,7 @@ export default function Dashboard() {
                   paddingAngle={5}
                   stroke="none"
                 >
-                  {companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS')).map((entry, index) => (
+                  {companiesRev.today.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getPortalColor(entry.name, index)} />
                   ))}
                 </Pie>
