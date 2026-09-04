@@ -572,7 +572,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
             if month_label not in monthly_data:
                 monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_ho"] += 1
+            monthly_data[month_label]["order_count_hg"] += 1
             
     carpet_data = fetch_carpet_sheet_csv()
     for row in carpet_data[1:]:
@@ -588,7 +588,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
             if month_label not in monthly_data:
                 monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_ho"] += 1
+            monthly_data[month_label]["order_count_hg"] += 1
             
     # Add MKM aggregate sales
 
@@ -608,7 +608,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
             if month_label not in monthly_data:
                 monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_ho"] += 1
+            monthly_data[month_label]["order_count_hg"] += 1
 
     # Add Hetalls orders
     hetalls_data = fetch_hetalls_sheet_csv()
