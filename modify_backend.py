@@ -1,15 +1,12 @@
 ﻿import re
 
 with open('backend/routers/dashboard.py', 'r', encoding='utf-8') as f:
-    lines = f.readlines()
+    content = f.read()
 
-new_lines = []
-skip = False
-for line in lines:
-    if "Add Hetalls orders" in line:
-        # Check if we are inside get_kpis, recent_orders, or today_orders
-        # For companies_revenue and revenue_chart, we want to KEEP it.
-        # How to know context?
-        pass
+# Initialize order_count_hg and order_count_ho instead of order_count
+content = re.sub(r'\"order_count\": 0', '"order_count_hg": 0, "order_count_ho": 0', content)
 
-# Actually simpler: just find exact line ranges and delete.
+# Change order_count += 1 for HG companies
+content = re.sub(r'monthly_data\[month_label\]\[\"order_count\"\] \+= 1', 'monthly_data[month_label]["order_count_hg"] += 1', content)
+
+# Wait, the regex will replace all order_count += 1. But we want order_count_ho for Hetalls!

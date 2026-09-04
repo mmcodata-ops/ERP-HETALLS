@@ -570,9 +570,9 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if dt and price > 0:
             month_label = dt.strftime("%b %Y")
             if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count"] += 1
+            monthly_data[month_label]["order_count_ho"] += 1
             
     carpet_data = fetch_carpet_sheet_csv()
     for row in carpet_data[1:]:
@@ -586,9 +586,9 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if dt and price > 0:
             month_label = dt.strftime("%b %Y")
             if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count"] += 1
+            monthly_data[month_label]["order_count_ho"] += 1
             
     # Add MKM aggregate sales
 
@@ -606,9 +606,9 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if dt and price > 0:
             month_label = dt.strftime("%b %Y")
             if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count"] += 1
+            monthly_data[month_label]["order_count_ho"] += 1
 
     # Add Hetalls orders
     hetalls_data = fetch_hetalls_sheet_csv()
@@ -623,9 +623,9 @@ def revenue_chart(current_user=Depends(get_current_user)):
         if dt and price > 0:
             month_label = dt.strftime("%b %Y")
             if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count": 0}
+                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
             monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count"] += 1
+            monthly_data[month_label]["order_count_ho"] += 1
 
             
     # Sort by date
@@ -639,7 +639,7 @@ def revenue_chart(current_user=Depends(get_current_user)):
             
         del m["_dt"]
         for k in m:
-            if k != "month" and k != "order_count":
+            if k != "month" and k != "order_count_hg" and k != "order_count_ho":
                 m[k] = round(m[k], 2)
         results.append(m)
         
