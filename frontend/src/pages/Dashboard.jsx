@@ -982,33 +982,49 @@ export default function Dashboard() {
               <div className="card-subtitle">Revenue breakdown by portal for today</div>
             </div>
           </div>
-          {companiesRev?.today && companiesRev.today.length > 0 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <Pie isAnimationActive={false}
-                  data={companiesRev.today}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={5}
-                  stroke="none"
-                >
-                  {companiesRev.today.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getPortalColor(entry.name, index)} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend align="center" wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', width: '100%', color: 'var(--text-muted)' }}>
-              No sales data for today yet.
-            </div>
-          )}
+          {(() => {
+            if (!companiesRev?.today) return null;
+            const pieData = [];
+            let hetallsGroup = { name: 'HETALLS', value: 0, order_count: 0 };
+            
+            companiesRev.today.forEach(c => {
+              if (c.name?.toUpperCase().includes('HETALLS')) {
+                hetallsGroup.value += (c.value || 0);
+                hetallsGroup.order_count += (c.order_count || 0);
+              } else {
+                pieData.push(c);
+              }
+            });
+            if (hetallsGroup.value > 0) pieData.push(hetallsGroup);
+            
+            return pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                  <Pie isAnimationActive={false}
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={5}
+                    stroke="none"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'HETALLS' ? '#ef4444' : getPortalColor(entry.name, index)} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomPieTooltip />} />
+                  <Legend align="center" wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', width: '100%', color: 'var(--text-muted)' }}>
+                No sales data for today yet.
+              </div>
+            );
+          })()}
         </div>
 
         {/* Revenue Area Chart */}
