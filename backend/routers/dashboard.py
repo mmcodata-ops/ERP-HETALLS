@@ -426,7 +426,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
     colors = ["#f59e0b", "#3b82f6", "#ef4444", "#10b981", "#8b5cf6", "#ec4899", "#f87171", "#fb923c", "#14b8a6", "#eab308", "#0ea5e9", "#f97316", "#d946ef", "#06b6d4", "#84cc16", "#fef08a", "#fde68a", "#fecaca", "#bfdbfe"]
     
     portals = {"total": {}, "today": {}, "month": {}, "year": {}}
-    counts = {"today": {}}
+    counts = {"today": {}, "month": {}, "year": {}}
     
     now = datetime.now()
     current_year = now.year
@@ -456,8 +456,10 @@ def companies_revenue(current_user=Depends(get_current_user)):
             if dt:
                 if fy_start <= dt <= fy_end:
                     portals["year"][portal] = portals["year"].get(portal, 0) + price
+                    counts["year"][portal] = counts["year"].get(portal, 0) + 1
                 if dt.year == current_year and dt.month == current_month:
                     portals["month"][portal] = portals["month"].get(portal, 0) + price
+                    counts["month"][portal] = counts["month"].get(portal, 0) + 1
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
@@ -476,8 +478,10 @@ def companies_revenue(current_user=Depends(get_current_user)):
             if dt:
                 if fy_start <= dt <= fy_end:
                     portals["year"][portal] = portals["year"].get(portal, 0) + price
+                    counts["year"][portal] = counts["year"].get(portal, 0) + 1
                 if dt.year == current_year and dt.month == current_month:
                     portals["month"][portal] = portals["month"].get(portal, 0) + price
+                    counts["month"][portal] = counts["month"].get(portal, 0) + 1
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
@@ -500,8 +504,10 @@ def companies_revenue(current_user=Depends(get_current_user)):
             if dt:
                 if fy_start <= dt <= fy_end:
                     portals["year"][portal] = portals["year"].get(portal, 0) + price
+                    counts["year"][portal] = counts["year"].get(portal, 0) + 1
                 if dt.year == current_year and dt.month == current_month:
                     portals["month"][portal] = portals["month"].get(portal, 0) + price
+                    counts["month"][portal] = counts["month"].get(portal, 0) + 1
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
@@ -521,8 +527,10 @@ def companies_revenue(current_user=Depends(get_current_user)):
             if dt:
                 if fy_start <= dt <= fy_end:
                     portals["year"][portal] = portals["year"].get(portal, 0) + price
+                    counts["year"][portal] = counts["year"].get(portal, 0) + 1
                 if dt.year == current_year and dt.month == current_month:
                     portals["month"][portal] = portals["month"].get(portal, 0) + price
+                    counts["month"][portal] = counts["month"].get(portal, 0) + 1
                 if dt.date() == today:
                     portals["today"][portal] = portals["today"].get(portal, 0) + price
                     counts["today"][portal] = counts["today"].get(portal, 0) + 1
@@ -536,8 +544,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
                 "value": round(total, 2),
                 "color": colors[i % len(colors)]
             }
-            if key == "today":
-                item["order_count"] = counts["today"].get(portal, 0)
+            item["order_count"] = counts.get(key, {}).get(portal, 0)
             results[key].append(item)
             
         results[key].sort(key=lambda x: x["value"], reverse=True)
