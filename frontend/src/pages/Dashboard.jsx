@@ -530,6 +530,7 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState(null)
   const [hoveredDataKey, setHoveredDataKey] = useState(null)
   const [tooltipLocked, setTooltipLocked] = useState(false)
+  const [chartView, setChartView] = useState('hg') // 'hg' = Hetalls Group (original), 'ho' = Hetalls Only
   const [revenueChart, setRevenueChart] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [todayOrders, setTodayOrders] = useState([])
@@ -976,55 +977,52 @@ export default function Dashboard() {
         
         {/* Today's Sales Pie Chart */}
         <div className="card">
-          <div className="card-header">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div className="card-title">Today's Sales Distribution</div>
               <div className="card-subtitle">Revenue breakdown by portal for today</div>
             </div>
+            <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', flexShrink: 0 }}>
+              <button onClick={() => setChartView('hg')} style={{ padding: '4px 14px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: '20px', transition: 'all 0.2s', background: chartView === 'hg' ? 'var(--gold)' : 'transparent', color: chartView === 'hg' ? '#000' : 'var(--text-muted)' }}>H.G.</button>
+              <button onClick={() => setChartView('ho')} style={{ padding: '4px 14px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: '20px', transition: 'all 0.2s', background: chartView === 'ho' ? 'var(--gold)' : 'transparent', color: chartView === 'ho' ? '#000' : 'var(--text-muted)' }}>H.O.</button>
+            </div>
           </div>
-          {(() => {
-            if (!companiesRev?.today) return null;
-            const pieData = [];
-            let hetallsGroup = { name: 'HETALLS', value: 0, order_count: 0 };
-            
-            companiesRev.today.forEach(c => {
-              if (c.name?.toUpperCase().includes('HETALLS')) {
-                hetallsGroup.value += (c.value || 0);
-                hetallsGroup.order_count += (c.order_count || 0);
-              } else {
-                pieData.push(c);
-              }
-            });
-            if (hetallsGroup.value > 0) pieData.push(hetallsGroup);
-            
+          {companiesRev?.today && companiesRev.today.length > 0 ? (() => {
+            const pieData = chartView === 'ho'
+              ? companiesRev.today.filter(c => c.name?.toUpperCase().includes('HETALLS'))
+              : companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS'));
             return pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                  <Pie isAnimationActive={false}
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={5}
-                    stroke="none"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.name === 'HETALLS' ? '#ef4444' : getPortalColor(entry.name, index)} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomPieTooltip />} />
-                  <Legend align="center" wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', width: '100%', color: 'var(--text-muted)' }}>
-                No sales data for today yet.
-              </div>
-            );
-          })()}
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <Pie isAnimationActive={false}
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={110}
+                  paddingAngle={5}
+                  stroke="none"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getPortalColor(entry.name, index)} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+                <Legend align="center" wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', width: '100%', color: 'var(--text-muted)' }}>
+              No {chartView === 'ho' ? 'Hetalls' : ''} sales data for today yet.
+            </div>
+          );
+          })() : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', width: '100%', color: 'var(--text-muted)' }}>
+              No sales data for today yet.
+            </div>
+          )}
         </div>
 
         {/* Revenue Area Chart */}
@@ -1032,7 +1030,7 @@ export default function Dashboard() {
           <div className="card-header">
             <div>
               <div className="card-title">Monthly Revenue Trend</div>
-              <div className="card-subtitle">All Companies — Monthly Brands</div>
+              <div className="card-subtitle">{chartView === 'ho' ? 'Hetalls Only — Monthly Brands' : 'All Companies — Monthly Brands'}</div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={400}>
@@ -1044,8 +1042,10 @@ export default function Dashboard() {
               <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredDataKey={hoveredDataKey} tooltipLocked={tooltipLocked} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
               <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
               
-              {allChartPortals.map((portal, idx) => (
-                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId={portal.toUpperCase().includes('HETALLS') ? "b" : "a"} onMouseEnter={() => setHoveredDataKey(portal)} onMouseLeave={() => setHoveredDataKey(null)} />
+              {allChartPortals
+                .filter(portal => chartView === 'ho' ? portal.toUpperCase().includes('HETALLS') : !portal.toUpperCase().includes('HETALLS'))
+                .map((portal, idx) => (
+                <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" onMouseEnter={() => setHoveredDataKey(portal)} onMouseLeave={() => setHoveredDataKey(null)} />
               ))}
               <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey="order_count" name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
             </ComposedChart>
