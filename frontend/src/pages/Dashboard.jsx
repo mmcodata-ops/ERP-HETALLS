@@ -274,6 +274,115 @@ const PortalGrowthCard = ({ revenueChart, style = {} }) => {
   );
 };
 
+const OrdersSpinningCard = ({ kpis, companiesRev, isOrdersUp, style = {} }) => {
+  const [spinCount, setSpinCount] = useState(0);
+  const touchStartX = useRef(0);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const faces = [
+    { key: 'today', label: "Orders Today", value: kpis?.today_orders || 0, sub: "Today only", icon: isOrdersUp ? TrendingUp : TrendingDown, colorClass: isOrdersUp ? 'success' : 'danger' },
+    { key: 'month', label: "Orders This Month", value: kpis?.this_month_orders || 0, sub: "Month to date", icon: TrendingUp, colorClass: 'warning' },
+    { key: 'year', label: "Orders This Year", value: kpis?.this_year_orders || 0, sub: "Year to date", icon: TrendingUp, colorClass: 'success' },
+  ];
+
+  const getFace = (i) => {
+    let k = spinCount - (spinCount % 3) + i;
+    if (k < spinCount - 1) k += 3;
+    return faces[k % faces.length];
+  };
+
+  const currentFace = faces[spinCount % 3];
+
+  return (
+    <div 
+      style={{ position: 'relative', zIndex: isHovered ? 9999 : 1, ...style }}
+      onMouseEnter={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(true); }}
+      onMouseLeave={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(false); }}
+    >
+      <div 
+        className="cube-container" 
+        onClick={(e) => { 
+          if (e && e.preventDefault) e.preventDefault(); 
+          const rect = e.currentTarget.getBoundingClientRect();
+          let clientX = e.clientX;
+          if ((clientX === undefined || clientX === 0) && e.nativeEvent?.changedTouches?.length > 0) {
+            clientX = e.nativeEvent.changedTouches[0].clientX;
+          }
+          const isRight = (clientX - rect.left) > rect.width / 2;
+          setSpinCount(c => isRight ? c + 1 : (c - 1 + 300) % 300); 
+          setIsHovered(true);
+        }}
+        onTouchStart={(e) => touchStartX.current = e.touches[0].clientX}
+        onTouchEnd={(e) => {
+          const diff = e.changedTouches[0].clientX - touchStartX.current;
+          if (Math.abs(diff) > 30) {
+            setSpinCount(c => diff > 0 ? (c - 1 + 300) % 300 : c + 1);
+          }
+        }}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <div 
+          className="cube" 
+          style={{ 
+            transform: `translateZ(-140px) rotateY(${spinCount * -120}deg)`, 
+            transition: 'transform 0.4s ease-out' 
+          }}
+        >
+          {[0, 1, 2].map(i => {
+            const f = getFace(i);
+            return (
+              <div key={i} className="cube-face">
+                <div style={{ width: '100%', height: '100%' }}>
+                  <KPICard 
+                    icon={f.icon} 
+                    label={f.label} 
+                    value={f.value} 
+                    sub={f.sub} 
+                    colorClass={f.colorClass} 
+                    format="number"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {isHovered && companiesRev && companiesRev[currentFace.key] && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
+            background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
+            padding: '14px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), var(--glass-shine)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
+              Companies Orders ({currentFace.key}):
+            </span>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsHovered(false); }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px 6px', fontSize: '14px', fontWeight: 'bold' }}
+              title="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+            {companiesRev[currentFace.key].map(c => (
+              <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '12px' }}>
+                <span style={{ color: getPortalColor(c.name, 0), fontWeight: 500 }}>{c.name}</span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>{c.order_count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const RevenueSpinningCard = ({ kpis, companiesRev, style = {} }) => {
   const [spinCount, setSpinCount] = useState(0);
   const touchStartX = useRef(0);
