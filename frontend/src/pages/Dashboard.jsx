@@ -85,6 +85,8 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
 
   const total = filteredItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0)
 
+  const isAggregateView = tooltipLocked || !hoveredDataKey;
+
   const getPercentageStr = (prev, curr) => {
     if (prev > 0) {
       const pct = ((curr - prev) / prev) * 100
@@ -105,8 +107,8 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
       backdropFilter: 'blur(32px) saturate(200%)',
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label} {tooltipLocked && <span style={{fontSize: 10, color: 'var(--gold)'}}>(All Data)</span>}</p>
-      {!tooltipLocked && filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
+      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label} {isAggregateView && <span style={{fontSize: 10, color: 'var(--gold)'}}>(All Data)</span>}</p>
+      {!isAggregateView && filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
@@ -117,19 +119,19 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
           }} />
         )
       })}
-      {tooltipLocked && (() => {
+      {isAggregateView && (() => {
         let percentageStr = ""
         if (previousData) {
           const prevTotal = portalItems.reduce((sum, item) => sum + (Number(previousData[item.dataKey]) || 0), 0)
           percentageStr = getPercentageStr(prevTotal, total)
         }
         return (
-          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
+          <div style={{ color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
             __html: `<span>Total:</span> <span>$${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${percentageStr}</span>`
           }} />
         )
       })()}
-      {tooltipLocked && salesCountItem && (() => {
+      {isAggregateView && salesCountItem && (() => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[salesCountItem.dataKey]) || 0, Number(salesCountItem.value) || 0)
