@@ -67,7 +67,7 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, tooltipLocked, chartView }) => {
+const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
   if (!active || !payload || !payload.length) return null
 
   const portalItems = payload.filter(p => p.dataKey !== 'order_count_hg' && p.dataKey !== 'order_count_ho' && p.dataKey !== 'month' && p.dataKey !== '_dt')
@@ -75,17 +75,10 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
   const currentIndex = data.findIndex(d => d.month === label)
   const previousData = currentIndex > 0 ? data[currentIndex - 1] : null
 
-  // Filter based on hovered stack
-  const filteredItems = [...portalItems].filter(p => {
-    if (!Number(p.value)) return false;
-    if (tooltipLocked) return true; // Show all
-    if (hoveredDataKey) return p.dataKey === hoveredDataKey; // Show individual
-    return true; // Show all if nothing hovered
-  });
+  // ALWAYS show all portals with non-zero values
+  const filteredItems = [...portalItems].filter(p => Number(p.value));
 
   const total = filteredItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0)
-
-  const isAggregateView = tooltipLocked || !hoveredDataKey;
 
   const getPercentageStr = (prev, curr) => {
     if (prev > 0) {
@@ -107,8 +100,8 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
       backdropFilter: 'blur(32px) saturate(200%)',
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label} {isAggregateView && <span style={{fontSize: 10, color: 'var(--gold)'}}>(All Data)</span>}</p>
-      {!isAggregateView && filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
+      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+      {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
@@ -119,19 +112,19 @@ const ProgressChartTooltip = ({ active, payload, label, data, hoveredDataKey, to
           }} />
         )
       })}
-      {isAggregateView && (() => {
+      {(() => {
         let percentageStr = ""
         if (previousData) {
           const prevTotal = portalItems.reduce((sum, item) => sum + (Number(previousData[item.dataKey]) || 0), 0)
           percentageStr = getPercentageStr(prevTotal, total)
         }
         return (
-          <div style={{ color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
             __html: `<span>Total:</span> <span>$${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${percentageStr}</span>`
           }} />
         )
       })()}
-      {isAggregateView && salesCountItem && (() => {
+      {salesCountItem && (() => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[salesCountItem.dataKey]) || 0, Number(salesCountItem.value) || 0)
