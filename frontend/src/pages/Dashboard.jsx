@@ -1118,11 +1118,16 @@ export default function Dashboard() {
                       {itemsModalData.map((item, i) => (
                         <tr key={i}>
                           <td style={{ padding: '8px 14px' }}>
-                            {item.picture && item.picture !== 'N/A' && item.picture !== '#N/A' && item.picture.startsWith('http') ? (
-                              <a href={item.picture} target="_blank" rel="noreferrer"><img src={item.picture} alt="Rug" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', cursor: 'zoom-in' }} /></a>
-                            ) : (
-                              <div style={{ width: '40px', height: '40px', background: 'var(--bg-card)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'var(--text-muted)' }}>No Img</div>
-                            )}
+                            {(() => {
+                              let pic = item.picture;
+                              if (!pic || pic === 'N/A' || pic === '#N/A' || pic === '-') return <div style={{ width: '40px', height: '40px', background: 'var(--bg-card)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'var(--text-muted)' }}>No Img</div>;
+                              // Convert Google Drive share links to direct image
+                              if (pic.includes('drive.google.com/file/d/')) {
+                                const id = pic.match(/\/d\/([^/]+)/)?.[1];
+                                if (id) pic = `https://drive.google.com/thumbnail?id=${id}&sz=w200`;
+                              }
+                              return <a href={item.picture} target="_blank" rel="noreferrer"><img src={pic} alt="Rug" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', cursor: 'zoom-in' }} onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="width:40px;height:40px;background:var(--bg-card);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted)">No Img</div>'; }} /></a>;
+                            })()}
                           </td>
                           <td style={{ padding: '8px 14px', fontSize: '12px' }}>{item.portal}</td>
                           <td style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 'bold' }}>{item.order_no}</td>

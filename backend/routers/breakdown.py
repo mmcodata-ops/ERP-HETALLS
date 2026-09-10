@@ -190,7 +190,7 @@ def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_u
             "portal": row[4].strip(),
             "order_no": row[5].strip(),
             "buyer_name": row[6].strip(),
-            "picture": row[7].strip(),
+            "picture": (row[18].strip() if len(row) > 18 and row[18].strip() else row[7].strip()),
             "material": row[10].strip(),
             "size": row[11].strip(),
             "quantity": row[9].strip(),
