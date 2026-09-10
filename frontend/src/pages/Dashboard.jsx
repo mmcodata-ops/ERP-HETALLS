@@ -777,6 +777,20 @@ export default function Dashboard() {
   const [bdData,       setBdData]       = useState(null)
   const [bdLoading,    setBdLoading]    = useState(false)
 
+  const [itemsModalData, setItemsModalData] = useState(null)
+  const [itemsModalDate, setItemsModalDate] = useState('')
+  const [itemsModalLoading, setItemsModalLoading] = useState(false)
+
+  const fetchItemsForDate = (dateStr) => {
+    setItemsModalDate(dateStr)
+    setItemsModalLoading(true)
+    setItemsModalData(null)
+    axios.get(`${API}/api/breakdown/daily-sales-items?date=${dateStr}`)
+      .then(res => setItemsModalData(res.data))
+      .catch(console.error)
+      .finally(() => setItemsModalLoading(false))
+  }
+
   useEffect(() => {
     let interval;
     if (showBreakdown) {
@@ -1043,7 +1057,13 @@ export default function Dashboard() {
                     <tbody>
                       {bdData.rows.map((row, rIdx) => (
                         <tr key={rIdx}>
-                          <td style={{ whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--text-primary)', paddingLeft: '14px' }}>{row[0] || `Row ${rIdx + 1}`}</td>
+                          <td 
+                              onClick={() => fetchItemsForDate(row[0])}
+                              style={{ whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--gold)', cursor: 'pointer', paddingLeft: '14px', textDecoration: 'underline' }}
+                              title="Click to view detailed items for this date"
+                            >
+                              {row[0] || `Row ${rIdx + 1}`}
+                            </td>
                           {getGroupedData().flatMap(group => 
                             group.columns.map(col => (
                               <td key={col.colIndex}>{row[col.colIndex] || '-'}</td>
@@ -1053,6 +1073,72 @@ export default function Dashboard() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Items Modal */}
+      {itemsModalDate && (
+        <div className="breakdown-overlay" onClick={() => setItemsModalDate('')} style={{ zIndex: 10001 }}>
+          <div className="breakdown-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
+            <div className="breakdown-modal-header" style={{ position: 'relative', paddingRight: '44px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Items for {itemsModalDate}</h3>
+              </div>
+              <button 
+                onClick={() => setItemsModalDate('')} 
+                style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+                title="Close"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="breakdown-content" style={{ padding: '20px' }}>
+              {itemsModalLoading ? (
+                <div className="page-loading" style={{ height: '200px' }}><div className="big-spinner" /><p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Fetching items...</p></div>
+              ) : itemsModalData && itemsModalData.length > 0 ? (
+                <div className="breakdown-table-wrapper">
+                  <table className="breakdown-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '10px 14px' }}>Image</th>
+                        <th style={{ padding: '10px 14px' }}>Portal</th>
+                        <th style={{ padding: '10px 14px' }}>Order No</th>
+                        <th style={{ padding: '10px 14px' }}>Buyer</th>
+                        <th style={{ padding: '10px 14px' }}>Material</th>
+                        <th style={{ padding: '10px 14px' }}>Size</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' }}>Qty</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itemsModalData.map((item, i) => (
+                        <tr key={i}>
+                          <td style={{ padding: '8px 14px' }}>
+                            {item.picture && item.picture !== 'N/A' && item.picture !== '#N/A' && item.picture.startsWith('http') ? (
+                              <a href={item.picture} target="_blank" rel="noreferrer"><img src={item.picture} alt="Rug" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', cursor: 'zoom-in' }} /></a>
+                            ) : (
+                              <div style={{ width: '40px', height: '40px', background: 'var(--bg-card)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'var(--text-muted)' }}>No Img</div>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px' }}>{item.portal}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 'bold' }}>{item.order_no}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px' }}>{item.buyer_name}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px' }}>{item.material}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px' }}>{item.size}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px', textAlign: 'center' }}>{item.quantity}</td>
+                          <td style={{ padding: '8px 14px', fontSize: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--gold)' }}>${Number(item.price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>No items found</p>
                 </div>
               )}
             </div>
