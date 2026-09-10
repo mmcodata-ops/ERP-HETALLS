@@ -161,7 +161,7 @@ def daily_sales(date: str = Query(default="today"), current_user=Depends(get_cur
         "rows": rows,
         "total_rows": len(rows)
     }
-\n
+
 @router.get("/daily-sales-items")
 def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_user)):
     data = fetch_sheet_csv("ORDERS")
