@@ -85,9 +85,9 @@ const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
       const pct = ((curr - prev) / prev) * 100
       const sign = pct > 0 ? "+" : ""
       const color = pct >= 0 ? "var(--success)" : "var(--danger)"
-      return ` <span style="color:${color}; font-size:11px; margin-left:4px">(${sign}${pct.toFixed(1)}%)</span>`
+      return ` <span style="color:${color}; font-size:11px; margin-left:4px">(${sign}${pct.toFixed(2)}%)</span>`
     } else if (curr > 0 && prev === 0) {
-      return ` <span style="color:var(--success); font-size:11px; margin-left:4px">(+100.0%)</span>`
+      return ` <span style="color:var(--success); font-size:11px; margin-left:4px">(+100.00%)</span>`
     }
     return ""
   }
