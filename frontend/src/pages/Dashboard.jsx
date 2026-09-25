@@ -115,8 +115,15 @@ const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
       {(() => {
         let percentageStr = ""
         if (previousData) {
-          const metaKeys = new Set(['order_count_hg', 'order_count_ho', 'month', '_dt']);
-          const prevTotal = Object.entries(previousData).reduce((sum, [key, val]) => metaKeys.has(key) ? sum : sum + (Number(val) || 0), 0);
+          const skipKeys = new Set(['order_count', 'order_count_hg', 'order_count_ho', 'month', '_dt', 'total']);
+          let prevTotal = 0;
+          for (const [key, val] of Object.entries(previousData)) {
+            if (skipKeys.has(key) || typeof val !== 'number') continue;
+            const isHetalls = key.toUpperCase().includes('HETALLS');
+            if (chartView === 'ho' ? isHetalls : !isHetalls) {
+              prevTotal += val;
+            }
+          }
           percentageStr = getPercentageStr(prevTotal, total)
         }
         return (
