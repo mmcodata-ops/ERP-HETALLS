@@ -115,7 +115,8 @@ const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
       {(() => {
         let percentageStr = ""
         if (previousData) {
-          const prevTotal = portalItems.reduce((sum, item) => sum + (Number(previousData[item.dataKey]) || 0), 0)
+          const metaKeys = new Set(['order_count_hg', 'order_count_ho', 'month', '_dt']);
+          const prevTotal = Object.entries(previousData).reduce((sum, [key, val]) => metaKeys.has(key) ? sum : sum + (Number(val) || 0), 0);
           percentageStr = getPercentageStr(prevTotal, total)
         }
         return (

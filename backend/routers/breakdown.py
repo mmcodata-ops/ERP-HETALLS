@@ -162,6 +162,41 @@ def daily_sales(date: str = Query(default="today"), current_user=Depends(get_cur
         "total_rows": len(rows)
     }
 
+# Cache for image URLs extracted from IMAGE() formulas in column H
+_IMAGE_CACHE = {"ts": 0, "data": {}}
+
+def _fetch_image_urls():
+    """Fetch column H IMAGE() formula URLs via gviz/tq API."""
+    import json, re
+    now = time.time()
+    if now - _IMAGE_CACHE["ts"] < 60:  # cache 60s
+        return _IMAGE_CACHE["data"]
+    try:
+        # Use the spreadsheet ID from the pub URL
+        gviz_url = "https://docs.google.com/spreadsheets/d/11NAw3BWNt3Bwc1OqDv2EyL5WSLN1wZUg4qziq8SRDM/gviz/tq?tqx=out:csv&gid=978055065&range=F:H"
+        req = urllib.request.Request(gviz_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as response:
+            content = response.read().decode('utf-8')
+            rows = list(csv.reader(StringIO(content)))
+            result = {}
+            for row in rows[1:]:
+                if len(row) >= 3:
+                    order_no = row[0].strip()  # Column F = Order No
+                    pic_val = row[2].strip()   # Column H = Picture
+                    # Extract URL from =IMAGE("url") or just use if it's a direct URL
+                    if pic_val:
+                        m = re.search(r'IMAGE\("([^"]+)"\)', pic_val, re.IGNORECASE)
+                        if m:
+                            result[order_no] = m.group(1)
+                        elif pic_val.startswith('http'):
+                            result[order_no] = pic_val
+            _IMAGE_CACHE["ts"] = now
+            _IMAGE_CACHE["data"] = result
+            return result
+    except Exception as e:
+        print(f"Error fetching image URLs: {e}")
+        return _IMAGE_CACHE.get("data", {})
+
 @router.get("/daily-sales-items")
 def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_user)):
     data = fetch_sheet_csv("ORDERS")
@@ -173,6 +208,10 @@ def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_u
         return []
         
     target_date = target_dt.date()
+    
+    # Fetch image URLs separately (since CSV export loses =IMAGE() formulas)
+    image_map = _fetch_image_urls()
+    
     items = []
     
     for row in data[1:]:
@@ -186,11 +225,16 @@ def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_u
         price = parse_price(row[36])
         if price <= 0: continue
         
+        order_no = row[5].strip()
+        pic = image_map.get(order_no, "")
+        if not pic:
+            pic = (row[18].strip() if len(row) > 18 and row[18].strip() else row[7].strip())
+        
         items.append({
             "portal": row[4].strip(),
-            "order_no": row[5].strip(),
+            "order_no": order_no,
             "buyer_name": row[6].strip(),
-            "picture": (row[18].strip() if len(row) > 18 and row[18].strip() else row[7].strip()),
+            "picture": pic,
             "material": row[10].strip(),
             "size": row[11].strip(),
             "quantity": row[9].strip(),
@@ -198,3 +242,4 @@ def daily_sales_items(date: str = Query(...), current_user=Depends(get_current_u
         })
         
     return items
+
