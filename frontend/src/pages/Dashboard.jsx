@@ -1160,7 +1160,7 @@ export default function Dashboard() {
       )}
 
       {/* Charts */}
-      <div className={`chart-grid ${(revenueChart?.length || 0) >= 7 ? 'stacked' : 'side-by-side'}`}>
+      <div className="chart-grid side-by-side">
         
         {/* Today's Sales Pie Chart */}
         <div className="card">
