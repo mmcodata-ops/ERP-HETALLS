@@ -26,7 +26,7 @@ SHEET_URL_TEMPLATE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkTIObrXy
 MKM_SHEET_URL = "https://docs.google.com/spreadsheets/d/1NZo52WV0ynaYe-G2WrZ5ItRwPmNKjdwhr_GOyztAz8U/export?format=csv&gid=663408233"
 CARPET_SHEET_URL = "https://docs.google.com/spreadsheets/d/11NAw3BWNt3Bwcl1OqDv2EyL5WSLN1wZUg4qziq8SRDM/export?format=csv&gid=1394514115"
 HETALLS_SHEET_BASE = "https://docs.google.com/spreadsheets/d/1JBOBE5pkjbKMv3F8dIXIDPBI7jKXxduTjKWDQz4VrGM/export?format=csv&gid="
-HETALLS_GIDS = ["0", "982943342", "1609638761", "1728354485", "528257396", "14872727"]  # Apr to Sep
+HETALLS_GIDS = ["0", "982943342", "1609638761", "1728354485", "528257396", "14872727", "1966681463"]  # Apr to Oct
 
 _CACHE = {}
 _CACHE_LOCK = threading.Lock()
