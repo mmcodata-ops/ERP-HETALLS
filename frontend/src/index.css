@@ -94,24 +94,11 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
   position: fixed;
   top: 0; left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  
-  
-  -webkit-
-  
-  
+
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -196,21 +183,8 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
   height: var(--header-height);
-  
-  
-  -webkit-
-  
-  
+
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px;
   position: sticky; top: 0; z-index: 50;
@@ -244,22 +218,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
-  
-  
-  -webkit-
-  
-  
-  
-  
   padding: 20px !important;
   transition: all var(--transition);
   position: relative; overflow: hidden;
@@ -336,22 +295,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
-  
-  
-  -webkit-
-  
-  
-  
-  
   padding: 24px;
   
 }
@@ -455,22 +399,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
-  
-  
-  -webkit-
-  
-  
-  
-  
   padding: 48px 44px;
   width: 420px;
   
@@ -715,23 +644,8 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
   overflow: auto;
-  
-  
-  -webkit-
-  
-  
-  
-  
+
   flex: 1;
   min-height: 0;
   
@@ -1162,15 +1076,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
@@ -1194,15 +1099,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
     padding: 0 16px !important;
   }
   .page-body {
@@ -1221,15 +1117,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
-
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
     width: 100%;
     overflow-x: auto !important;
@@ -1347,15 +1234,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
 
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
-
     padding: 12px !important;
     height: 115px !important;
     min-height: 115px !important;
@@ -1411,15 +1289,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
-
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
     width: 90vw !important;
     padding: 24px 20px !important;
@@ -1623,15 +1492,6 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
-
-  
-  
-  -webkit-
-  
-  
-  
-  
-  
 
     display: none !important;
   }
