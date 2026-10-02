@@ -38,23 +38,16 @@
 html { font-size: 16px; }
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #050811;
-  background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
+  background-color: #050811; /* Deep navy base */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
   background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  position: relative;
-  z-index: 0;
-}
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.15); /* Much lighter overlay for HD clarity */
-  z-index: -1;
 }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
@@ -85,7 +78,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── Sidebar ───────────────────────────────────────────────────────── */
 .sidebar {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 0 !important;
@@ -182,7 +175,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── Header ────────────────────────────────────────────────────────── */
 .header {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 0 !important;
@@ -217,7 +210,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -294,7 +287,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── Cards / Panels ────────────────────────────────────────────────── */
 .card {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -398,7 +391,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   bottom: -100px; right: -50px; pointer-events: none;
 }
 .login-card {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -643,7 +636,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 /* New table styles */
 .breakdown-table-wrapper {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -1075,7 +1068,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     animation: fadeIn 0.2s ease;
   }
   .sidebar {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 0 !important;
@@ -1098,7 +1091,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     max-width: 100vw !important;
   }
   .header {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 0 !important;
@@ -1117,7 +1110,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     gap: 16px !important;
   }
   .table-wrapper, .breakdown-table-wrapper {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -1233,7 +1226,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     flex-direction: column;
   }
   .kpi-card {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -1289,7 +1282,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     grid-template-columns: 1fr !important;
   }
   .login-card {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 24px !important;
@@ -1492,7 +1485,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 @media (max-width: 768px) {
   body.chat-active .header {
-  background: rgba(255, 255, 255, 0.01) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
   border-radius: 0 !important;
