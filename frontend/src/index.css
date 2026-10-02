@@ -130,21 +130,29 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  border-radius: 50px;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text-secondary);
   font-size: 14px; font-weight: 500;
-  transition: all var(--transition);
-  margin-bottom: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 4px;
   cursor: pointer;
 }
-.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-.nav-item.active {
-  background: var(--gold-glow);
-  color: var(--gold);
-  border: 1px solid var(--border-accent);
+.nav-item:hover { 
+  background: rgba(255, 255, 255, 0.03); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+  color: #ffffff; 
 }
-.nav-item.active svg { color: var(--gold); }
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+.nav-item.active svg { color: #ffffff; }
 .nav-item svg { flex-shrink: 0; }
 
 .sidebar-user {
@@ -612,11 +620,11 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   color: #ffffff;
 }
 .breakdown-tab.active {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
   color: #ffffff;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 1px 3px rgba(255, 255, 255, 0.4);
 }
 .breakdown-tab-custom {
   display: flex;
