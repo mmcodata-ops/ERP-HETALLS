@@ -82,11 +82,11 @@ input, select, textarea { font-family: inherit; outline: none; }
   top: 0; left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: rgba(255, 255, 255, 0.02) !important;
-  backdrop-filter: blur(20px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 15px 0 35px rgba(0, 0, 0, 0.3), inset -2px 0 5px rgba(255, 255, 255, 0.05) !important;
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -163,11 +163,11 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ─── Header ────────────────────────────────────────────────────────── */
 .header {
   height: var(--header-height);
-  background: rgba(255, 255, 255, 0.02) !important;
-  backdrop-filter: blur(20px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 -2px 5px rgba(255, 255, 255, 0.05) !important;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px;
   position: sticky; top: 0; z-index: 50;
@@ -192,17 +192,17 @@ input, select, textarea { font-family: inherit; outline: none; }
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: var(--radius);
-  padding: 20px;
+  border-radius: 36px !important;
+  padding: 24px 20px !important;
   transition: all var(--transition);
   position: relative; overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.15) !important;
 }
 .kpi-card::before {
   content: '';
@@ -266,15 +266,15 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── Cards / Panels ────────────────────────────────────────────────── */
 .card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 32px !important;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.1) !important;
 }
 .card-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -367,16 +367,16 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   bottom: -100px; right: -50px; pointer-events: none;
 }
 .login-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 20px;
+  border-radius: 40px !important;
   padding: 48px 44px;
   width: 420px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.15) !important;
   position: relative; z-index: 1;
 }
 .login-logo { text-align: center; margin-bottom: 32px; }
@@ -586,16 +586,16 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 /* New table styles */
 .breakdown-table-wrapper {
   overflow: auto;
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px !important;
   flex: 1;
   min-height: 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.1) !important;
 }
 .breakdown-table {
   width: 100%;
