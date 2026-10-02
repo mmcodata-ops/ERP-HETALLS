@@ -82,15 +82,12 @@ input, select, textarea { font-family: inherit; outline: none; }
   top: 0; left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: #060913 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.7) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.4) !important;
   display: flex;
-  flex-direction: column;
-  z-index: 100;
-  overflow-y: auto;
 }
 .sidebar-logo {
   padding: 24px 20px 20px;
@@ -163,11 +160,11 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ─── Header ────────────────────────────────────────────────────────── */
 .header {
   height: var(--header-height);
-  background: #080d1a !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4) !important;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px;
   position: sticky; top: 0; z-index: 50;
@@ -192,15 +189,17 @@ input, select, textarea { font-family: inherit; outline: none; }
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--radius);
   padding: 20px;
   transition: all var(--transition);
   position: relative; overflow: hidden;
-  box-shadow: var(--shadow), var(--glass-shine);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
 }
 .kpi-card::before {
   content: '';
@@ -264,13 +263,15 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── Cards / Panels ────────────────────────────────────────────────── */
 .card {
-  background: #0b1120 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), var(--glass-shine);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
 }
 .card-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -363,12 +364,16 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   bottom: -100px; right: -50px; pointer-events: none;
 }
 .login-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 20px;
   padding: 48px 44px;
   width: 420px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
   position: relative; z-index: 1;
 }
 .login-logo { text-align: center; margin-bottom: 32px; }
@@ -578,11 +583,16 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 /* New table styles */
 .breakdown-table-wrapper {
   overflow: auto;
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px;
-  background: var(--bg-card);
   flex: 1;
   min-height: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
 }
 .breakdown-table {
   width: 100%;
@@ -1001,10 +1011,17 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     animation: fadeIn 0.2s ease;
   }
   .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: none !important;
-  }
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.4) !important;
+  display: flex;
+}
   .sidebar.mobile-open {
     transform: translateX(0);
     box-shadow: 20px 0 60px rgba(0, 0, 0, 0.8) !important;
@@ -1132,93 +1149,17 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     flex-direction: column;
   }
   .kpi-card {
-    padding: 12px !important;
-    height: 115px !important;
-    min-height: 115px !important;
-    max-height: 115px !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    box-sizing: border-box !important;
-  }
-  .kpi-value {
-    font-size: 20px !important;
-    margin-bottom: 4px !important;
-  }
-  .kpi-label {
-    font-size: 11px !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 8px !important;
-  }
-  .kpi-sub {
-    font-size: 10px !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: auto !important;
-  }
-  .kpi-icon {
-    width: 28px !important;
-    height: 28px !important;
-  }
-  .kpi-icon svg {
-    width: 14px !important;
-    height: 14px !important;
-  }
-  .cube-container, .cube, .cube-face {
-    height: 115px !important;
-    min-height: 115px !important;
-    max-height: 115px !important;
-    width: 100% !important;
-  }
-
-  .chart-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .login-card {
-    width: 90vw !important;
-    padding: 24px 20px !important;
-  }
-  .breakdown-table th, .breakdown-table td {
-    padding: 8px 10px !important;
-    font-size: 12px !important;
-  }
-}
-
-/* ─── Company Bills Responsive Buttons ──────────────────────────────── */
-.company-bills-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  padding: 12px 0;
-}
-@media (max-width: 800px) {
-  .company-bills-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .company-bills-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.company-bill-btn {
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-  color: #000 !important;
-  font-weight: 700;
-  padding: 14px 16px;
-  border-radius: 12px;
-  text-align: center;
-  text-decoration: none;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all var(--transition);
+  position: relative; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
 }
 .company-bill-btn:hover {
   transform: translateY(-2px);
