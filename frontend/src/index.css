@@ -202,25 +202,33 @@ input, select, textarea { font-family: inherit; outline: none; }
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 30px !important;
+  background: rgba(10, 15, 30, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 28px !important;
   padding: 6px !important;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-radius: 24px !important;
-  border: 1px solid transparent !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   box-shadow: none !important;
   padding: 16px 20px !important;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; overflow: hidden;
   min-width: 0;
 }
+
+/* First card acts as the active tab */
+.kpi-grid > *:first-child .kpi-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.02) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+}
+
 .kpi-card::before {
   content: '';
   position: absolute;
