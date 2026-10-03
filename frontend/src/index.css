@@ -1074,26 +1074,26 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     animation: fadeIn 0.2s ease;
   }
   .sidebar {
-  background: rgba(255, 255, 255, 0.02) !important;
-  backdrop-filter: blur(16px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
-  border-radius: 24px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
-
-  position: fixed;
-  top: 16px; left: 16px;
-  width: var(--sidebar-width);
-  height: calc(100vh - 32px);
-  
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  overflow-y: auto;
-}
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 100;
+    background: rgba(12, 14, 24, 0.97) !important;
+    backdrop-filter: blur(20px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+    border-radius: 0 24px 24px 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.6) !important;
+    transform: translateX(-110%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
   .sidebar.mobile-open {
     transform: translateX(0);
-    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.8) !important;
   }
   .main-content {
     margin-left: 0 !important;
