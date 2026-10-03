@@ -1574,3 +1574,29 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 
 
+
+
+/* Sliding pill switch */
+.glass-switch {
+  position: relative; display: flex; padding: 3px; flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(10, 15, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+.glass-switch button {
+  position: relative; z-index: 1; background: none; border: 0;
+  padding: 5px 16px; border-radius: 999px; cursor: pointer;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  transition: color 0.3s;
+}
+.glass-switch button.on { color: #000; }
+.glass-switch-knob {
+  position: absolute; top: 3px; bottom: 3px; left: 3px;
+  width: calc(50% - 3px); border-radius: 999px;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+  transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.glass-switch[data-v="ho"] .glass-switch-knob { transform: translateX(100%); }

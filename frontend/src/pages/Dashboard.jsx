@@ -1169,10 +1169,11 @@ export default function Dashboard() {
               <div className="card-title">Today's Sales Distribution</div>
               <div className="card-subtitle">Revenue breakdown by portal for today</div>
             </div>
-            <div className="dock-container" style={{ flexShrink: 0 }}>
-                <button onClick={() => setChartView('hg')} className={`dock-tab ${chartView === 'hg' ? 'active' : ''}`}>H.G.</button>
-                <button onClick={() => setChartView('ho')} className={`dock-tab ${chartView === 'ho' ? 'active' : ''}`}>H.O.</button>
-              </div>
+            <div className="glass-switch" data-v={chartView}>
+              <span className="glass-switch-knob" />
+              <button className={chartView === 'hg' ? 'on' : ''} onClick={() => setChartView('hg')}>H.G.</button>
+              <button className={chartView === 'ho' ? 'on' : ''} onClick={() => setChartView('ho')}>H.O.</button>
+            </div>
           </div>
           {companiesRev?.today && companiesRev.today.length > 0 ? (() => {
             const pieData = chartView === 'ho'
