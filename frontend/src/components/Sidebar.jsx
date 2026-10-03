@@ -98,9 +98,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             right: 12,
             opacity: pillStyle.opacity,
             borderRadius: '50px',
-            background: 'rgba(45, 48, 65, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.2)', borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 0 20px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)',
+            background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)', borderTop: '1px solid rgba(255, 255, 255, 0.25)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
             transition: 'all 0.35s cubic-bezier(0.34, 1.4, 0.64, 1)',
             pointerEvents: 'none',
             zIndex: 0
