@@ -200,8 +200,13 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ─── KPI Cards ─────────────────────────────────────────────────────── */
 .kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
   background: rgba(10, 15, 30, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 28px !important;
@@ -209,6 +214,10 @@ input, select, textarea { font-family: inherit; outline: none; }
   gap: 6px;
   margin-bottom: 24px;
 }
+.kpi-grid::-webkit-scrollbar {
+  display: none;
+}
+
 .kpi-card {
   background: rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(12px) !important;
@@ -1243,17 +1252,17 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   margin-bottom: 24px;
 }
   .kpi-grid > *:first-child {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
+  /* removed grid-column override so flex works */
+}
   .kpi-grid > * {
-    height: 115px !important;
-    min-height: 115px !important;
-    max-height: 115px !important;
-    width: 100% !important;
-    display: flex;
-    flex-direction: column;
-  }
+  height: 115px !important;
+  min-height: 115px !important;
+  max-height: 115px !important;
+  flex: 0 0 calc(20% - 5px); /* Exactly 5 cards visible, maintaining the perfect length/width */
+  min-width: 235px; /* Ensures they never squish on smaller screens, allowing scroll */
+  display: flex;
+  flex-direction: column;
+}
   .kpi-card {
   background: transparent !important;
   backdrop-filter: none !important;
@@ -1572,3 +1581,28 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
+
+
+/* --- OVERRIDE FOR HORIZONTAL SCROLL DOCK --- */
+.kpi-grid {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.kpi-grid::-webkit-scrollbar {
+  display: none !important;
+}
+.kpi-grid > * {
+  flex: 0 0 calc(20% - 5px) !important;
+  min-width: 250px !important;
+  max-width: calc(20% - 5px) !important;
+}
+@media (max-width: 1400px) {
+  .kpi-grid > * {
+    flex: 0 0 250px !important;
+    max-width: 250px !important;
+  }
+}
