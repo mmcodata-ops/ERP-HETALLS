@@ -1238,7 +1238,7 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 
 
-}
+
   .kpi-grid > *:first-child {
   /* removed grid-column override so flex works */
 }
