@@ -1169,10 +1169,10 @@ export default function Dashboard() {
               <div className="card-title">Today's Sales Distribution</div>
               <div className="card-subtitle">Revenue breakdown by portal for today</div>
             </div>
-            <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', flexShrink: 0 }}>
-              <button onClick={() => setChartView('hg')} style={{ padding: '4px 14px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: '20px', transition: 'all 0.2s', background: chartView === 'hg' ? 'var(--gold)' : 'transparent', color: chartView === 'hg' ? '#000' : 'var(--text-muted)' }}>H.G.</button>
-              <button onClick={() => setChartView('ho')} style={{ padding: '4px 14px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: '20px', transition: 'all 0.2s', background: chartView === 'ho' ? 'var(--gold)' : 'transparent', color: chartView === 'ho' ? '#000' : 'var(--text-muted)' }}>H.O.</button>
-            </div>
+            <div className="dock-container" style={{ flexShrink: 0 }}>
+                <button onClick={() => setChartView('hg')} className={`dock-tab ${chartView === 'hg' ? 'active' : ''}`}>H.G.</button>
+                <button onClick={() => setChartView('ho')} className={`dock-tab ${chartView === 'ho' ? 'active' : ''}`}>H.O.</button>
+              </div>
           </div>
           {companiesRev?.today && companiesRev.today.length > 0 ? (() => {
             const pieData = chartView === 'ho'
