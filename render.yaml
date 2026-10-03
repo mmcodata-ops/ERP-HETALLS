@@ -26,7 +26,6 @@ services:
         fromService:
           type: web
           name: hetalls-erp-b
-    autoDeploy: true
           envVarKey: RENDER_EXTERNAL_URL
     routes:
       - type: rewrite
