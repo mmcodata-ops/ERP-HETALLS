@@ -201,7 +201,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ─── KPI Cards ─────────────────────────────────────────────────────── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   background: rgba(14, 16, 25, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
   border-radius: 28px !important;
@@ -220,7 +220,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-radius: 20px !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
   box-shadow: none !important;
-  padding: 20px 24px !important;
+  padding: 16px 16px !important;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; overflow: hidden;
   min-width: 0;

@@ -948,7 +948,7 @@ export default function Dashboard() {
 
     <HetallsSpinningCard key="htl-rev" companiesRev={companiesRev} isCurrency={true} style={{ viewTransitionName: 'kpi-htl-rev' }} />,
 
-    // <HetallsSpinningCard key="htl-ord" companiesRev={companiesRev} isCurrency={false} style={{ viewTransitionName: 'kpi-htl-ord' }} /> */}
+    <HetallsSpinningCard key="htl-ord" companiesRev={companiesRev} isCurrency={false} style={{ viewTransitionName: 'kpi-htl-ord' }} />,
 
     <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }}/>
   ];
