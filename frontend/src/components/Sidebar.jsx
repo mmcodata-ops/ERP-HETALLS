@@ -1,5 +1,5 @@
-import React from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useMessages } from '../context/MessagesContext'
 import {
@@ -25,7 +25,27 @@ const NAV = [
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { user, logout } = useAuth()
   const { unreadCount } = useMessages()
-  const navigate = useNavigate()
+    const navigate = useNavigate()
+  const location = useLocation()
+  const navRef = useRef(null)
+  const [pillStyle, setPillStyle] = useState({ top: 0, height: 0, opacity: 0 })
+
+  useEffect(() => {
+    // Wait for render, then find active element
+    setTimeout(() => {
+      if (!navRef.current) return
+      const activeEl = navRef.current.querySelector('.nav-item.active')
+      if (activeEl) {
+        setPillStyle({
+          top: activeEl.offsetTop,
+          height: activeEl.offsetHeight,
+          opacity: 1
+        })
+      } else {
+        setPillStyle(p => ({ ...p, opacity: 0 }))
+      }
+    }, 50)
+  }, [location.pathname])
 
   const canSee = (item) => {
     if (!item.role && !item.permission) return true
@@ -69,7 +89,22 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+                <nav className="sidebar-nav" ref={navRef} style={{ position: 'relative' }}>
+          <div className="sidebar-pill" style={{
+            position: 'absolute',
+            top: pillStyle.top,
+            height: pillStyle.height,
+            left: 12,
+            right: 12,
+            opacity: pillStyle.opacity,
+            borderRadius: '50px',
+            background: 'rgba(45, 48, 65, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.2)', borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 0 20px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)',
+            transition: 'all 0.35s cubic-bezier(0.34, 1.4, 0.64, 1)',
+            pointerEvents: 'none',
+            zIndex: 0
+          }} />
           {NAV.map(section => {
             const visible = section.items.filter(i => canSee(i))
             if (!visible.length) return null
@@ -82,6 +117,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                     to={item.to}
                     end
                     onClick={() => setSidebarOpen && setSidebarOpen(false)}
+                    style={{ position: 'relative', zIndex: 1 }}
                     className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                   >
                   <item.icon size={17} />

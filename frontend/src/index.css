@@ -135,10 +135,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   color: #ffffff; 
 }
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 }
 .nav-item.active svg { color: #ffffff; }
 .nav-item svg { flex-shrink: 0; }
