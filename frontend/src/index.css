@@ -1618,19 +1618,19 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 /* each card is always visible as glass, not only on hover */
 .kpi-card {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+  background: rgba(30, 32, 45, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 24px !important;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 .kpi-card:hover,
 .cube-container:hover .kpi-card {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(45, 48, 65, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
   transform: translateY(-2px);
 }
