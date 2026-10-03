@@ -1616,6 +1616,11 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   position: relative;
   z-index: 5;
+  align-items: stretch !important;
+}
+.kpi-grid > * {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
 }
 
 /* each card is always visible as glass, not only on hover */
