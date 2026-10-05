@@ -939,18 +939,18 @@ export default function Dashboard() {
   const isOrdersUp = (kpis?.today_orders ?? 0) >= (kpis?.yesterday_orders ?? 0);
 
   const kpiElements = [
-    <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null} style={{ viewTransitionName: 'kpi-rev' }} />,
-    <OrdersSpinningCard key="orders" kpis={kpis} isOrdersUp={isOrdersUp} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null} style={{ viewTransitionName: 'kpi-orders' }} />,
+    <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
+    <OrdersSpinningCard key="orders" kpis={kpis} isOrdersUp={isOrdersUp} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
 
-    <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', height: '100%', viewTransitionName: 'kpi-break' }}>
+    <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', height: '100%' }}>
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
     </div>,
 
-    <HetallsSpinningCard key="htl-rev" companiesRev={companiesRev} isCurrency={true} style={{ viewTransitionName: 'kpi-htl-rev' }} />,
+    <HetallsSpinningCard key="htl-rev" companiesRev={companiesRev} isCurrency={true}  />,
 
-    <HetallsSpinningCard key="htl-ord" companiesRev={companiesRev} isCurrency={false} style={{ viewTransitionName: 'kpi-htl-ord' }} />,
+    <HetallsSpinningCard key="htl-ord" companiesRev={companiesRev} isCurrency={false}  />,
 
-    <PortalGrowthCard key="portal" revenueChart={revenueChart} style={{ viewTransitionName: 'kpi-portal' }}/>
+    <PortalGrowthCard key="portal" revenueChart={revenueChart} />
   ];
 
 

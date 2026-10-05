@@ -211,6 +211,9 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 
 .kpi-card {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   background: rgba(255, 255, 255, 0.02) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
@@ -227,6 +230,9 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* First card acts as the active tab */
 .kpi-grid > *:first-child .kpi-card {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   background: linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.02) 100%) !important;
   border: 1px solid rgba(212, 175, 55, 0.3) !important;
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
@@ -262,6 +268,8 @@ input, select, textarea { font-family: inherit; outline: none; }
 .cube-container {
   perspective: 1200px;
   position: relative;
+  display: flex !important;
+  flex-direction: column !important;
   width: 100%;
   height: 100%;
   min-height: 140px;
@@ -274,14 +282,22 @@ input, select, textarea { font-family: inherit; outline: none; }
 .cube {
   width: 100%;
   height: 100%;
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
 }
+.cube-face > div { flex: 1 1 0 !important; display: flex !important; flex-direction: column !important; }
+.cube-face > div > .kpi-card { flex: 1 1 0 !important; }
 .cube-face {
   position: absolute;
   width: 100%;
   height: 100%;
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   display: flex;
@@ -1284,7 +1300,9 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
     width: 14px !important;
     height: 14px !important;
   }
-  .cube-container, .cube, .cube-face {
+  .cube-container, .cube, .cube-face > div { flex: 1 1 0 !important; display: flex !important; flex-direction: column !important; }
+.cube-face > div > .kpi-card { flex: 1 1 0 !important; }
+.cube-face {
     height: 115px !important;
     min-height: 115px !important;
     max-height: 115px !important;
@@ -1617,6 +1635,9 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 
 /* each card is always visible as glass, not only on hover */
 .kpi-card {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   height: 100% !important;
   background: rgba(255, 255, 255, 0.06) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1628,6 +1649,9 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 }
 .kpi-card:hover,
 .cube-container:hover .kpi-card {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   background: rgba(255, 255, 255, 0.12) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
