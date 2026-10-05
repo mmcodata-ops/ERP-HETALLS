@@ -942,7 +942,7 @@ export default function Dashboard() {
     <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
     <OrdersSpinningCard key="orders" kpis={kpis} isOrdersUp={isOrdersUp} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
 
-    <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', height: '100%' }}>
+    <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1 }}>
       <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
     </div>,
 
