@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 import urllib.request
 import urllib.parse
 import csv
 from io import StringIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from auth import get_current_user
 import time
 import threading
@@ -217,6 +217,8 @@ def fetch_carpet_sheet_csv(force=False):
                 return _CACHE[sheet_name][1]
             return []
 
+import concurrent.futures
+
 def fetch_hetalls_sheet_csv(force=False):
     sheet_name = "HETALLS_ORDERS"
     now = time.time()
@@ -225,28 +227,53 @@ def fetch_hetalls_sheet_csv(force=False):
             cached_time, data = _CACHE[sheet_name]
             if now - cached_time <= CACHE_TTL:
                 return data
+                
+        if sheet_name in _FETCH_EVENTS:
+            event = _FETCH_EVENTS[sheet_name]
+            needs_fetch = False
+        else:
+            event = threading.Event()
+            _FETCH_EVENTS[sheet_name] = event
+            needs_fetch = True
 
-    # Fetch all monthly tabs and merge
-    all_rows = []
-    header = None
-    session = _get_session()
-    for gid in HETALLS_GIDS:
-        url = HETALLS_SHEET_BASE + gid + f"&_cb={int(time.time())}"
-        try:
-            response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
-            response.raise_for_status()
-            rows = list(csv.reader(StringIO(response.text)))
+    if needs_fetch:
+        all_rows = []
+        header = None
+        
+        def fetch_gid(gid):
+            url = HETALLS_SHEET_BASE + gid + f"&_cb={int(time.time())}"
+            try:
+                session = _get_session()
+                response = session.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+                response.raise_for_status()
+                return list(csv.reader(StringIO(response.text)))
+            except Exception as e:
+                print(f"Error fetching Hetalls gid={gid}: {e}")
+                return []
+                
+        with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+            results = executor.map(fetch_gid, HETALLS_GIDS)
+            
+        for rows in results:
             if rows:
                 if header is None:
                     header = rows[0]
-                all_rows.extend(rows[1:])  # skip header of each tab
-        except Exception as e:
-            print(f"Error fetching Hetalls gid={gid}: {e}")
-
-    data = [header] + all_rows if header else []
-    with _CACHE_LOCK:
-        _CACHE[sheet_name] = (time.time(), data)
-    return data
+                all_rows.extend(rows[1:])
+                
+        data = [header] + all_rows if header else []
+        with _CACHE_LOCK:
+            if data:
+                _CACHE[sheet_name] = (time.time(), data)
+            if sheet_name in _FETCH_EVENTS:
+                del _FETCH_EVENTS[sheet_name]
+        event.set()
+        return data or []
+    else:
+        event.wait(timeout=10)
+        with _CACHE_LOCK:
+            if not force and sheet_name in _CACHE:
+                return _CACHE[sheet_name][1]
+            return []
 
 def parse_price(val_str):
     try:
@@ -263,10 +290,15 @@ def normalize_portal(portal):
     if "CRAFT" in p and "MKM" in p: return "CRAFT-MKM"
     return p
 
+_DATE_CACHE = {}
+
 def parse_date(date_str):
     if not date_str: return None
     date_str = date_str.strip()
     
+    if date_str in _DATE_CACHE:
+        return _DATE_CACHE[date_str]
+        
     formats = [
         "%d-%b-%Y", "%d-%b-%y", "%d %b %Y", "%d %b %y",
         "%b %d, %Y", "%b %d %Y", "%d-%B-%Y", "%d %B %Y",
@@ -277,9 +309,13 @@ def parse_date(date_str):
     ]
     for fmt in formats:
         try:
-            return datetime.strptime(date_str, fmt)
+            parsed = datetime.strptime(date_str, fmt)
+            _DATE_CACHE[date_str] = parsed
+            return parsed
         except ValueError:
             pass
+            
+    _DATE_CACHE[date_str] = None
     return None
 
 # Column mappings for ORDERS sheet based on screenshots:
@@ -552,7 +588,7 @@ def companies_revenue(current_user=Depends(get_current_user)):
     return results
 
 @router.get("/revenue-chart")
-def revenue_chart(current_user=Depends(get_current_user)):
+def revenue_chart(group_by: str = "month", current_user=Depends(get_current_user)):
     now = datetime.now()
     current_year = now.year
     current_month = now.month
@@ -574,12 +610,39 @@ def revenue_chart(current_user=Depends(get_current_user)):
         portal = normalize_portal(row[4])
         price = parse_price(row[36])
         
-        if dt and price > 0:
-            month_label = dt.strftime("%b %Y")
-            if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
-            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_hg"] += 1
+        if dt:
+            if group_by in ["day", "mtd"] and dt.day > now.day:
+                continue
+            
+            if group_by in ["day", "mtd"]:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "week":
+                start_of_week = dt - timedelta(days=dt.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                label = start_of_week.strftime("%b %d") + " - " + end_of_week.strftime("%b %d, %Y")
+                sort_dt = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+            if label not in monthly_data:
+                monthly_data[label] = {"month": label, "_dt": sort_dt, "order_count_hg": 0, "order_count_ho": 0, "equiv": {"order_count_hg": 0, "order_count_ho": 0}}
+            monthly_data[label][portal] = monthly_data[label].get(portal, 0) + price
+            monthly_data[label]["order_count_hg"] += 1
+            
+            # Equivalent MTD/WTD logic
+            is_equiv = False
+            if group_by == "month":
+                is_equiv = False # User requested standard raw comparison for Monthly view
+            elif group_by == "week":
+                is_equiv = dt.weekday() <= now.weekday()
+            elif group_by == "day":
+                is_equiv = True
+                
+            if is_equiv:
+                monthly_data[label]["equiv"][portal] = monthly_data[label]["equiv"].get(portal, 0) + price
+                monthly_data[label]["equiv"]["order_count_hg"] += 1
             
     carpet_data = fetch_carpet_sheet_csv()
     for row in carpet_data[1:]:
@@ -590,12 +653,39 @@ def revenue_chart(current_user=Depends(get_current_user)):
         portal = normalize_portal(row[4]) if len(row) > 4 else "UNKNOWN"
         portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
-        if dt and price > 0:
-            month_label = dt.strftime("%b %Y")
-            if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
-            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_hg"] += 1
+        if dt:
+            if group_by in ["day", "mtd"] and dt.day > now.day:
+                continue
+            
+            if group_by in ["day", "mtd"]:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "week":
+                start_of_week = dt - timedelta(days=dt.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                label = start_of_week.strftime("%b %d") + " - " + end_of_week.strftime("%b %d, %Y")
+                sort_dt = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+            if label not in monthly_data:
+                monthly_data[label] = {"month": label, "_dt": sort_dt, "order_count_hg": 0, "order_count_ho": 0, "equiv": {"order_count_hg": 0, "order_count_ho": 0}}
+            monthly_data[label][portal] = monthly_data[label].get(portal, 0) + price
+            monthly_data[label]["order_count_hg"] += 1
+            
+            # Equivalent MTD/WTD logic
+            is_equiv = False
+            if group_by == "month":
+                is_equiv = False # User requested standard raw comparison for Monthly view
+            elif group_by == "week":
+                is_equiv = dt.weekday() <= now.weekday()
+            elif group_by == "day":
+                is_equiv = True
+                
+            if is_equiv:
+                monthly_data[label]["equiv"][portal] = monthly_data[label]["equiv"].get(portal, 0) + price
+                monthly_data[label]["equiv"]["order_count_hg"] += 1
             
     # Add MKM aggregate sales
 
@@ -610,12 +700,39 @@ def revenue_chart(current_user=Depends(get_current_user)):
         portal = normalize_portal(row[4])
         price = parse_price(row[26])
         
-        if dt and price > 0:
-            month_label = dt.strftime("%b %Y")
-            if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
-            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_hg"] += 1
+        if dt:
+            if group_by in ["day", "mtd"] and dt.day > now.day:
+                continue
+            
+            if group_by in ["day", "mtd"]:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "week":
+                start_of_week = dt - timedelta(days=dt.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                label = start_of_week.strftime("%b %d") + " - " + end_of_week.strftime("%b %d, %Y")
+                sort_dt = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+            if label not in monthly_data:
+                monthly_data[label] = {"month": label, "_dt": sort_dt, "order_count_hg": 0, "order_count_ho": 0, "equiv": {"order_count_hg": 0, "order_count_ho": 0}}
+            monthly_data[label][portal] = monthly_data[label].get(portal, 0) + price
+            monthly_data[label]["order_count_hg"] += 1
+            
+            # Equivalent MTD/WTD logic
+            is_equiv = False
+            if group_by == "month":
+                is_equiv = False # User requested standard raw comparison for Monthly view
+            elif group_by == "week":
+                is_equiv = dt.weekday() <= now.weekday()
+            elif group_by == "day":
+                is_equiv = True
+                
+            if is_equiv:
+                monthly_data[label]["equiv"][portal] = monthly_data[label]["equiv"].get(portal, 0) + price
+                monthly_data[label]["equiv"]["order_count_hg"] += 1
 
     # Add Hetalls orders
     hetalls_data = fetch_hetalls_sheet_csv()
@@ -627,12 +744,39 @@ def revenue_chart(current_user=Depends(get_current_user)):
         portal = normalize_portal(row[4])
         portal = f"{portal} (HETALLS)"
         price = parse_price(row[36])
-        if dt and price > 0:
-            month_label = dt.strftime("%b %Y")
-            if month_label not in monthly_data:
-                monthly_data[month_label] = {"month": month_label, "_dt": dt.replace(day=1), "order_count_hg": 0, "order_count_ho": 0}
-            monthly_data[month_label][portal] = monthly_data[month_label].get(portal, 0) + price
-            monthly_data[month_label]["order_count_ho"] += 1
+        if dt:
+            if group_by in ["day", "mtd"] and dt.day > now.day:
+                continue
+            
+            if group_by in ["day", "mtd"]:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "week":
+                start_of_week = dt - timedelta(days=dt.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                label = start_of_week.strftime("%b %d") + " - " + end_of_week.strftime("%b %d, %Y")
+                sort_dt = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                label = dt.strftime("%b %Y")
+                sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+            if label not in monthly_data:
+                monthly_data[label] = {"month": label, "_dt": sort_dt, "order_count_hg": 0, "order_count_ho": 0, "equiv": {"order_count_hg": 0, "order_count_ho": 0}}
+            monthly_data[label][portal] = monthly_data[label].get(portal, 0) + price
+            monthly_data[label]["order_count_ho"] += 1
+            
+            # Equivalent MTD/WTD logic
+            is_equiv = False
+            if group_by == "month":
+                is_equiv = False # User requested standard raw comparison for Monthly view
+            elif group_by == "week":
+                is_equiv = dt.weekday() <= now.weekday()
+            elif group_by == "day":
+                is_equiv = True
+                
+            if is_equiv:
+                monthly_data[label]["equiv"][portal] = monthly_data[label]["equiv"].get(portal, 0) + price
+                monthly_data[label]["equiv"]["order_count_ho"] += 1
 
             
     # Sort by date
@@ -640,14 +784,25 @@ def revenue_chart(current_user=Depends(get_current_user)):
     
     # Remove _dt and format
     results = []
+    
+    # Filter by group_by (don't show 52 weeks if not needed)
+    if group_by == "week":
+        sorted_months = sorted_months[-16:] # Last 16 weeks max for readability
+    elif group_by == "day":
+        sorted_months = sorted_months[-30:] # Last 30 days
+        
     for m in sorted_months:
-        if m["_dt"] < fy_start:
+        if group_by in ["month", "mtd", "day"] and m["_dt"] < fy_start:
             continue
             
         del m["_dt"]
         for k in m:
-            if k != "month" and k != "order_count_hg" and k != "order_count_ho":
+            if k != "month" and k != "order_count_hg" and k != "order_count_ho" and k != "equiv":
                 m[k] = round(m[k], 2)
+            elif k == "equiv":
+                for ek in m[k]:
+                    if ek != "order_count_hg" and ek != "order_count_ho":
+                        m[k][ek] = round(m[k][ek], 2)
         results.append(m)
         
     return results

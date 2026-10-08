@@ -38,7 +38,7 @@ import {
   TrendingUp, TrendingDown, Users, FileText, AlertCircle, Layers, X, Calendar, Clock, List
 } from 'lucide-react'
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, ComposedChart,
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, ComposedChart, LabelList,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 
@@ -54,7 +54,16 @@ const ChartTooltip = ({ active, payload, label }) => {
       backdropFilter: 'blur(32px) saturate(200%)',
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <p style={{ color: 'var(--text-muted)', margin: 0 }}>{label}</p>
+        <button 
+          className="tooltip-close-btn"
+          onClick={(e) => { e.stopPropagation(); setIsClosed(true); }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+        >
+          <X size={16} />
+        </button>
+      </div>
       {[...payload].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0)).map((p, i) => (
         <p key={i} style={{ color: p.color, fontWeight: 600 }}>
           {p.name}: ${Number(p.value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
@@ -67,8 +76,14 @@ const ChartTooltip = ({ active, payload, label }) => {
   )
 }
 
-const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
-  if (!active || !payload || !payload.length) return null
+const ProgressChartTooltip = ({ active, payload, label, data, chartView, chartGroupBy }) => {
+  const [isClosed, setIsClosed] = useState(false);
+
+  useEffect(() => {
+    setIsClosed(false);
+  }, [label]);
+
+  if (isClosed || !active || !payload || !payload.length) return null;
 
   const portalItems = payload.filter(p => p.dataKey !== 'order_count_hg' && p.dataKey !== 'order_count_ho' && p.dataKey !== 'month' && p.dataKey !== '_dt')
   const salesCountItem = payload.find(p => p.dataKey === (chartView === 'ho' ? 'order_count_ho' : 'order_count_hg'))
@@ -77,7 +92,6 @@ const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
 
   // ALWAYS show all portals with non-zero values
   const filteredItems = [...portalItems].filter(p => Number(p.value));
-
   const total = filteredItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0)
 
   const getPercentageStr = (prev, curr) => {
@@ -100,49 +114,41 @@ const ProgressChartTooltip = ({ active, payload, label, data, chartView }) => {
       backdropFilter: 'blur(32px) saturate(200%)',
       WebkitBackdropFilter: 'blur(32px) saturate(200%)'
     }}>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+          {label}
+        </p>
+        <button 
+          className="tooltip-close-btn"
+          onClick={(e) => { e.stopPropagation(); setIsClosed(true); }}
+          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setIsClosed(true); }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', touchAction: 'manipulation' }}
+        >
+          ✕
+        </button>
+      </div>
       {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
         let percentageStr = ""
         if (previousData) {
           percentageStr = getPercentageStr(Number(previousData[p.dataKey]) || 0, Number(p.value) || 0)
         }
         return (
-          <div key={i} style={{ color: p.color, fontWeight: 600, display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }} dangerouslySetInnerHTML={{
-            __html: `<span>${p.name}:</span> <span>$${Number(p.value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${percentageStr}</span>`
-          }} />
+          <div key={i} className="tooltip-item" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, gap: '16px' }}>
+            <span style={{ color: p.color, fontWeight: 600, whiteSpace: 'nowrap' }}>{p.name}:</span>
+            <span style={{ color: 'var(--gold)', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'right' }} dangerouslySetInnerHTML={{ __html: `$${Number(p.value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}${percentageStr}` }} />
+          </div>
         )
       })}
-      {(() => {
-        let percentageStr = ""
-        if (previousData) {
-          const skipKeys = new Set(['order_count', 'order_count_hg', 'order_count_ho', 'month', '_dt', 'total']);
-          let prevTotal = 0;
-          for (const [key, val] of Object.entries(previousData)) {
-            if (skipKeys.has(key) || typeof val !== 'number') continue;
-            const isHetalls = key.toUpperCase().includes('HETALLS');
-            if (chartView === 'ho' ? isHetalls : !isHetalls) {
-              prevTotal += val;
-            }
-          }
-          percentageStr = getPercentageStr(prevTotal, total)
-        }
-        return (
-          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
-            __html: `<span>Total:</span> <span>$${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}${percentageStr}</span>`
-          }} />
-        )
-      })()}
-      {salesCountItem && (() => {
-        let percentageStr = ""
-        if (previousData) {
-          percentageStr = getPercentageStr(Number(previousData[salesCountItem.dataKey]) || 0, Number(salesCountItem.value) || 0)
-        }
-        return (
-          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--border)', color: '#ef4444', fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: '16px' }} dangerouslySetInnerHTML={{
-            __html: `<span>Sales Count:</span> <span>${salesCountItem.value}${percentageStr}</span>`
-          }} />
-        )
-      })()}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px dashed var(--border)', fontWeight: 600, gap: '16px' }}>
+        <span style={{ color: 'var(--text)' }}>Total:</span>
+        <span style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}${previousData ? getPercentageStr(filteredItems.reduce((sum, item) => sum + (Number(previousData[item.dataKey]) || 0), 0), total) : ''}` }} />
+      </div>
+      {salesCountItem && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border)', color: 'var(--danger)', fontWeight: 600 }}>
+          <span>Sales Count:</span>
+          <span dangerouslySetInnerHTML={{ __html: `${salesCountItem.value}${previousData ? getPercentageStr(Number(previousData[salesCountItem.dataKey]) || 0, salesCountItem.value) : ''}` }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -183,6 +189,40 @@ function KPICard({ icon: Icon, label, value, sub, colorClass, prefix = '', forma
   )
 }
 
+
+const BreakdownStaticCard = ({ style = {}, openBreakdown }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  return (
+    <div 
+      key="breakdown" 
+      onClick={openBreakdown} 
+      className="breakdown-static-card" 
+      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: isHovered ? 9999 : 1, ...style }}
+      onMouseEnter={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(true); }}
+      onMouseLeave={() => { if (window.matchMedia('(hover: hover)').matches) setIsHovered(false); }}
+    >
+      <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" style={{ flex: '1 1 100%', width: '100%', height: '100%', minHeight: '100%' }} />
+      
+      {isHovered && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="card-detail-popup"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
+              Detailed Breakdown
+            </span>
+          </div>
+          <div style={{ color: 'var(--text-primary)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Click to view the daily sales report, brands, and portal data table.</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PortalGrowthCard = ({ revenueChart, style = {} }) => {
   const [spinCount, setSpinCount] = useState(0);
   const touchStartX = useRef(0);
@@ -190,7 +230,8 @@ const PortalGrowthCard = ({ revenueChart, style = {} }) => {
   const portals = useMemo(() => {
     if (!revenueChart || revenueChart.length < 2) return [];
     const latest = revenueChart[revenueChart.length - 1];
-    const prev = revenueChart[revenueChart.length - 2];
+    const prevRaw = revenueChart[revenueChart.length - 2];
+    const prev = prevRaw;
     const keySet = new Set(["AMAZON", "CASAVANI WEBSITE", "EBAY-RUGSFOREVER", "ETSY-CASAVANI", "ETSY-RUGSFOREVER", "JAYPOR", "MIRRAW", "PEPPERFRY", "WALMART"]);
     revenueChart.forEach(item => {
       if (item && typeof item === 'object') {
@@ -264,7 +305,7 @@ const PortalGrowthCard = ({ revenueChart, style = {} }) => {
                   icon={isUp ? TrendingUp : TrendingDown} 
                   label={p.name} 
                   value={`${isUp ? '+' : ''}${p.growth.toFixed(1)}%`} 
-                  sub="Growth vs Last Month" 
+                  sub="Growth vs Previous" 
                   colorClass={isUp ? "green" : "red"} 
                   format="text"
                 />
@@ -354,11 +395,7 @@ const OrdersSpinningCard = ({ kpis, companiesRev, isOrdersUp, style = {} }) => {
       {isHovered && companiesRev && companiesRev[currentFace.key] && (
         <div 
           onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
-            background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
-            padding: '14px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), var(--glass-shine)',
-          }}
+          className="card-detail-popup"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
@@ -463,11 +500,7 @@ const RevenueSpinningCard = ({ kpis, companiesRev, style = {} }) => {
       {isHovered && companiesRev && companiesRev[currentFace.key] && (
         <div 
           onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
-            background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
-            padding: '14px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), var(--glass-shine)',
-          }}
+          className="card-detail-popup"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--gold)' }}>
@@ -610,11 +643,7 @@ const HetallsSpinningCard = ({ companiesRev, isCurrency, style = {} }) => {
       </div>
 
       {isHovered && currentItems && currentItems.length > 0 && (
-        <div style={{
-            position: 'absolute', top: '105%', left: 0, width: '100%', minWidth: '250px', zIndex: 9999,
-            background: '#070b16', border: '1px solid var(--border-accent)', borderRadius: '12px',
-            padding: '14px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), var(--glass-shine)',
-          }}
+        <div className="card-detail-popup"
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
@@ -649,8 +678,13 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState(null)
   const [hoveredDataKey, setHoveredDataKey] = useState(null)
   const [tooltipLocked, setTooltipLocked] = useState(false)
-  const [chartView, setChartView] = useState('hg') // 'hg' = Hetalls Group (original), 'ho' = Hetalls Only
-  const [revenueChart, setRevenueChart] = useState(null)
+  const [chartView, setChartView] = useState('hg')
+  const [chartGroupBy, setChartGroupBy] = useState('month')
+  const chartGroupByRef = useRef('month')
+  const [fullScreenChart, setFullScreenChart] = useState(null) // 'hg' = Hetalls Group (original), 'ho' = Hetalls Only
+  const [revenueChartMonth, setRevenueChartMonth] = useState(null)
+  const [revenueChartMtd, setRevenueChartMtd] = useState(null)
+  const revenueChart = chartGroupBy === 'month' ? revenueChartMonth : revenueChartMtd;
   const [recentOrders, setRecentOrders] = useState([])
   const [todayOrders, setTodayOrders] = useState([])
   const [companiesRev, setCompaniesRev] = useState(null)
@@ -885,15 +919,17 @@ export default function Dashboard() {
       if (isInitial) setLoading(true);
       const t = Date.now();
       Promise.allSettled([
-        axios.get(`${API}/api/dashboard/kpis?_t=${t}`),
-        axios.get(`${API}/api/dashboard/revenue-chart?_t=${t}`),
-        axios.get(`${API}/api/dashboard/recent-orders?_t=${t}`),
-        axios.get(`${API}/api/dashboard/today-orders?_t=${t}`),
-        axios.get(`${API}/api/dashboard/companies-revenue?_t=${t}`),
-      ]).then(([k, r, o, tData, c]) => {
-        if (!isMounted) return;
-        if (k.status === 'fulfilled') setKpis(k.value.data);
-        if (r.status === 'fulfilled') setRevenueChart(r.value.data);
+          axios.get(`${API}/api/dashboard/kpis?_t=${t}`),
+          axios.get(`${API}/api/dashboard/revenue-chart?group_by=month&_t=${t}`),
+          axios.get(`${API}/api/dashboard/revenue-chart?group_by=mtd&_t=${t}`),
+          axios.get(`${API}/api/dashboard/recent-orders?_t=${t}`),
+          axios.get(`${API}/api/dashboard/today-orders?_t=${t}`),
+          axios.get(`${API}/api/dashboard/companies-revenue?_t=${t}`),
+        ]).then(([k, rMonth, rMtd, o, tData, c]) => {
+          if (!isMounted) return;
+          if (k.status === 'fulfilled') setKpis(k.value.data);
+          if (rMonth.status === 'fulfilled') setRevenueChartMonth(rMonth.value.data);
+          if (rMtd.status === 'fulfilled') setRevenueChartMtd(rMtd.value.data);
         if (o.status === 'fulfilled') setRecentOrders(o.value.data);
         if (tData.status === 'fulfilled') setTodayOrders(tData.value.data);
         if (c.status === 'fulfilled') setCompaniesRev(c.value.data);
@@ -918,7 +954,7 @@ export default function Dashboard() {
       revenueChart.forEach(item => {
         if (item && typeof item === 'object') {
           Object.keys(item).forEach(key => {
-            if (key !== "month" && key !== "total" && key !== "_dt" && key !== "order_count" && key !== "order_count_hg" && key !== "order_count_ho") {
+            if (key !== "month" && key !== "total" && key !== "_dt" && key !== "order_count" && key !== "order_count_hg" && key !== "order_count_ho" && key !== "equiv") {
               portalSet.add(key);
             }
           });
@@ -942,9 +978,7 @@ export default function Dashboard() {
     <RevenueSpinningCard key="rev" kpis={kpis} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
     <OrdersSpinningCard key="orders" kpis={kpis} isOrdersUp={isOrdersUp} companiesRev={companiesRev ? { today: companiesRev.today?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), month: companiesRev.month?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), year: companiesRev.year?.filter(c => !c.name?.toUpperCase().includes('HETALLS')), total: companiesRev.total?.filter(c => !c.name?.toUpperCase().includes('HETALLS')) } : null}  />,
 
-    <div key="breakdown" onClick={openBreakdown} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <KPICard icon={Layers} label="Detailed Breakdown" value="Breakdown" sub="Daily Sale Brands & Portal" colorClass="blue" format="text" className="h-full" />
-    </div>,
+      <BreakdownStaticCard key="breakdown" openBreakdown={openBreakdown} />,,
 
     <HetallsSpinningCard key="htl-rev" companiesRev={companiesRev} isCurrency={true}  />,
 
@@ -1181,15 +1215,15 @@ export default function Dashboard() {
               : companiesRev.today.filter(c => !c.name?.toUpperCase().includes('HETALLS'));
             return pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={320}>
-              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                 <Pie isAnimationActive={false}
                   data={pieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={110}
+                  innerRadius={60}
+                  outerRadius={95}
                   paddingAngle={5}
                   stroke="none"
                 >
@@ -1215,27 +1249,40 @@ export default function Dashboard() {
 
         {/* Revenue Area Chart */}
         <div className="card">
-          <div className="card-header">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="card-title">Monthly Revenue Trend</div>
-              <div className="card-subtitle">{chartView === 'ho' ? 'Hetalls Only — Monthly Brands' : 'All Companies — Monthly Brands'}</div>
+              <div className="card-title">{chartGroupBy === 'mtd' ? 'Date-Wise (MTD)' : 'Monthly'} Revenue Trend</div>
+              <div className="card-subtitle">{chartView === 'ho' ? 'Hetalls Only' : 'All Companies'} &mdash; Trend</div>
+            </div>
+            <div className="glass-switch" data-v={chartGroupBy}>
+              <span className="glass-switch-knob" />
+              <button className={chartGroupBy === 'month' ? 'on' : ''} onClick={() => {
+                chartGroupByRef.current = 'month';
+                setChartGroupBy('month');
+              }}>Month</button>
+              <button className={chartGroupBy === 'mtd' ? 'on' : ''} onClick={() => {
+                chartGroupByRef.current = 'mtd';
+                setChartGroupBy('mtd');
+              }}>Date</button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={revenueChart || []} margin={{ top: 15, right: 20, left: 0, bottom: 0 }} maxBarSize={45} onClick={() => setTooltipLocked(!tooltipLocked)}>
+            <ComposedChart data={revenueChart || []} margin={{ top: 20, right: 0, left: 0, bottom: 0 }} maxBarSize={45} onClick={() => setTooltipLocked(!tooltipLocked)}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Sales Count', angle: -90, position: 'right', fill: '#ef4444', fontSize: 11, fontWeight: 600, offset: 5 }} />
-              <Tooltip content={<ProgressChartTooltip data={revenueChart} hoveredDataKey={hoveredDataKey} tooltipLocked={tooltipLocked} chartView={chartView} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
-              <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: '12px' }} />
+              <YAxis yAxisId="left" width={45} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v/1000}k`} />
+              <YAxis yAxisId="right" orientation="right" width={30} tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, dataMax => Math.ceil(dataMax * 1.15)]} />
+              <Tooltip wrapperClassName="mobile-fixed-tooltip" content={<ProgressChartTooltip data={revenueChart || []} hoveredDataKey={hoveredDataKey} tooltipLocked={tooltipLocked} chartView={chartView} chartGroupBy={chartGroupBy} />} cursor={false} position={{ y: 0 }} wrapperStyle={{ zIndex: 100 }} />
+              <Legend align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 11, paddingTop: '12px' }} />
               
               {allChartPortals
                 .filter(portal => chartView === 'ho' ? portal.toUpperCase().includes('HETALLS') : !portal.toUpperCase().includes('HETALLS'))
                 .map((portal, idx) => (
                 <Bar isAnimationActive={false} yAxisId="left" key={portal} dataKey={portal} name={formatPortalName(portal)} fill={getPortalColor(portal, idx)} stackId="a" onMouseEnter={() => setHoveredDataKey(portal)} onMouseLeave={() => setHoveredDataKey(null)} />
               ))}
-              <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey={chartView === 'ho' ? 'order_count_ho' : 'order_count_hg'} name="Sales Count" legendType="none" stroke="#ef4444" strokeWidth={1} label={{ position: 'top', offset: 12, fill: '#ef4444', fontSize: 12, fontWeight: 500 }} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }} />
+              <Line isAnimationActive={false} yAxisId="right" type="linear" dataKey={chartView === 'ho' ? 'order_count_ho' : 'order_count_hg'} name="Sales Count" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 1.5 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff' }}>
+                  <LabelList dataKey={chartView === 'ho' ? 'order_count_ho' : 'order_count_hg'} position="top" offset={10} fill="#ef4444" fontSize={12} fontWeight="bold" />
+                </Line>
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -1245,3 +1292,4 @@ export default function Dashboard() {
     </div>
   )
 }
+

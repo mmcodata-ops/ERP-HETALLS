@@ -1,26 +1,37 @@
-import sys
 import re
 
-with open('frontend/src/index.css', 'r', encoding='utf-8') as f:
+file_path = 'frontend/src/index.css'
+with open(file_path, 'r', encoding='utf-8') as f:
     css = f.read()
 
-# Restore @media (max-width: 1024px) for .kpi-grid
-css = re.sub(
-    r"@media\s*\(\s*max-width:\s*1024px\s*\)\s*\{.*?\.kpi-grid\s*\{[^\}]+\}",
-    lambda m: m.group(0).replace("grid-template-columns: repeat(6, 1fr);", "grid-template-columns: repeat(3, 1fr);"),
-    css,
-    flags=re.DOTALL
-)
+fix_css = """
 
-# Restore @media (max-width: 768px) for .kpi-grid
-css = re.sub(
-    r"@media\s*\(\s*max-width:\s*768px\s*\)\s*\{.*?\.kpi-grid\s*\{[^\}]+\}",
-    lambda m: m.group(0).replace("grid-template-columns: repeat(6, 1fr);", "grid-template-columns: repeat(2, 1fr);"),
-    css,
-    flags=re.DOTALL
-)
+/* --- BULLETPROOF MOBILE GRID FIX --- */
+@media (max-width: 900px) {
+  .kpi-grid {
+    display: grid !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: stretch !important;
+    align-content: stretch !important;
+  }
+  .kpi-grid > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
+    margin: 0 !important;
+  }
+  .cube-container, .breakdown-static-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+"""
 
-with open('frontend/src/index.css', 'w', encoding='utf-8') as f:
+if "/* --- BULLETPROOF MOBILE GRID FIX --- */" not in css:
+    css += fix_css
+    
+with open(file_path, 'w', encoding='utf-8') as f:
     f.write(css)
 
-print("Restored mobile kpi-grid columns.")
+print("Added mobile grid stretch fix")

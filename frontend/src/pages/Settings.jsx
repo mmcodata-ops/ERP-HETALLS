@@ -129,14 +129,14 @@ export default function Settings() {
     <div>
       {/* Company Info Card */}
       <div className="card mb-6">
-        <div className="card-header">
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div className="card-title">Company Profile</div>
             <div className="card-subtitle">System-wide configuration</div>
           </div>
           <Building2 size={20} style={{ color: 'var(--text-muted)' }} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
           {[
             { label: 'Company Name',   value: 'Hetalls Inc.' },
             { label: 'Currency',       value: 'USD ($)' },
@@ -160,7 +160,7 @@ export default function Settings() {
       {/* History / Changes Popup */}
       {showHistory && (
         <div className="breakdown-overlay" onClick={() => setShowHistory(false)}>
-          <div className="breakdown-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700, padding: 24 }}>
+          <div className="breakdown-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700, width: '95%', padding: 24 }}>
             <div className="breakdown-modal-header" style={{ marginBottom: 20 }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -181,14 +181,14 @@ export default function Settings() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {commits.map((c, i) => (
                     <div key={i} style={{ background: 'var(--bg-surface)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>
                           {c.action} on <span style={{color: 'var(--primary)'}}>{c.table}</span> (ID: {c.record_id})
                         </span>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(c.timestamp).toLocaleString()}</span>
                       </div>
                       
-                      <div style={{ fontSize: 13, background: 'var(--bg-base)', padding: 10, borderRadius: 6, fontFamily: 'monospace', border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 13, background: 'var(--bg-base)', padding: 10, borderRadius: 6, fontFamily: 'monospace', border: '1px solid var(--border)', overflowX: 'auto' }}>
                         {Object.entries(c.changes || {}).map(([field, vals]) => (
                           <div key={field} style={{ marginBottom: 4 }}>
                             <strong style={{ color: 'var(--gold)' }}>{field}:</strong> 
@@ -231,30 +231,30 @@ export default function Settings() {
 
       {/* User Management Card */}
       <div className="card">
-        <div className="card-header">
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div className="card-title">User Management</div>
             <div className="card-subtitle">{users.length} registered users — manage roles and departments</div>
           </div>
           {isAdmin && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: '200px' }}>
               <input
                 type="text"
                 placeholder="Search users..."
                 className="form-input"
-                style={{ width: '200px', padding: '8px 12px', fontSize: '13px' }}
+                style={{ flex: 1, minWidth: '140px', padding: '8px 12px', fontSize: '13px' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button
                 onClick={handleSync}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
-                <RefreshCw size={16} /> Sync Directory
+                <RefreshCw size={16} /> Sync
               </button>
               <button
                 onClick={() => setShowAdd(!showAdd)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold-glow)', border: '1px solid var(--border-accent)', color: 'var(--gold)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold-glow)', border: '1px solid var(--border-accent)', color: 'var(--gold)', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 <Plus size={16} /> Add User
               </button>

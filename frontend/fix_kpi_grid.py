@@ -1,30 +1,60 @@
-import sys
 import re
 
 with open('frontend/src/index.css', 'r', encoding='utf-8') as f:
     css = f.read()
 
-def replace_block(pattern, new_block):
-    global css
-    new_css, count = re.subn(pattern, new_block, css, flags=re.DOTALL)
-    if count == 0:
-        print(f"Warning: could not match pattern {pattern[:30]}")
-    else:
-        css = new_css
+# Replace the previous override with a better one that forces 3x2 grid on desktop
+override_css = """
 
-replace_block(r"\.kpi-grid\s*\{.*?\}", 
-""".kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+/* --- KPI GRID SPACING OVERRIDES --- */
+.kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 24px !important;
+  padding: 20px !important;
   background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 30px !important;
-  padding: 6px !important;
-  gap: 4px;
-  margin-bottom: 24px;
-}""")
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 28px !important;
+}
+
+@media (max-width: 1200px) {
+  .kpi-grid {
+    gap: 20px !important;
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: repeat(1, 1fr) !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+}
+
+/* Ensure the cards themselves don't overlap the grid borders */
+.kpi-grid > * {
+  flex: unset !important;
+  width: 100% !important;
+}
+.kpi-card, .cube-container {
+  margin: 0 !important;
+}
+"""
+
+# replace the previous KPI GRID SPACING OVERRIDES block
+css = re.sub(r'/\* --- KPI GRID SPACING OVERRIDES --- \*/[\s\S]*?(?=$)', '', css)
+css += override_css
 
 with open('frontend/src/index.css', 'w', encoding='utf-8') as f:
     f.write(css)
 
-print("KPI grid changed back to grid-template-columns: repeat(6, 1fr)")
+print("Forced 3x2 grid layout and added gaps.")
