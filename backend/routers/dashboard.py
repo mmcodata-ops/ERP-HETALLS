@@ -611,12 +611,15 @@ def revenue_chart(group_by: str = "month", current_user=Depends(get_current_user
         price = parse_price(row[36])
         
         if dt:
-            if group_by in ["day", "mtd"] and dt.day > now.day:
+            if group_by == "mtd" and dt.day > now.day:
                 continue
             
-            if group_by in ["day", "mtd"]:
+            if group_by == "mtd":
                 label = dt.strftime("%b %Y")
                 sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "day":
+                label = dt.strftime("%d %b")
+                sort_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
             elif group_by == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 end_of_week = start_of_week + timedelta(days=6)
@@ -654,12 +657,15 @@ def revenue_chart(group_by: str = "month", current_user=Depends(get_current_user
         portal = f"{portal} (CARPET)"
         price = parse_price(row[18])
         if dt:
-            if group_by in ["day", "mtd"] and dt.day > now.day:
+            if group_by == "mtd" and dt.day > now.day:
                 continue
             
-            if group_by in ["day", "mtd"]:
+            if group_by == "mtd":
                 label = dt.strftime("%b %Y")
                 sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "day":
+                label = dt.strftime("%d %b")
+                sort_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
             elif group_by == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 end_of_week = start_of_week + timedelta(days=6)
@@ -701,12 +707,15 @@ def revenue_chart(group_by: str = "month", current_user=Depends(get_current_user
         price = parse_price(row[26])
         
         if dt:
-            if group_by in ["day", "mtd"] and dt.day > now.day:
+            if group_by == "mtd" and dt.day > now.day:
                 continue
             
-            if group_by in ["day", "mtd"]:
+            if group_by == "mtd":
                 label = dt.strftime("%b %Y")
                 sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "day":
+                label = dt.strftime("%d %b")
+                sort_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
             elif group_by == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 end_of_week = start_of_week + timedelta(days=6)
@@ -745,12 +754,15 @@ def revenue_chart(group_by: str = "month", current_user=Depends(get_current_user
         portal = f"{portal} (HETALLS)"
         price = parse_price(row[36])
         if dt:
-            if group_by in ["day", "mtd"] and dt.day > now.day:
+            if group_by == "mtd" and dt.day > now.day:
                 continue
             
-            if group_by in ["day", "mtd"]:
+            if group_by == "mtd":
                 label = dt.strftime("%b %Y")
                 sort_dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            elif group_by == "day":
+                label = dt.strftime("%d %b")
+                sort_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
             elif group_by == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 end_of_week = start_of_week + timedelta(days=6)

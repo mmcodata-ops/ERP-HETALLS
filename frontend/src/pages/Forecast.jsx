@@ -4,13 +4,14 @@ import {
   TrendingUp, Target, Activity, CheckCircle, Clock, AlertTriangle, AlertCircle, DollarSign
 } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function Forecast() {
-  const [data, setData] = useState([])
+  const [portalData, setPortalData] = useState([])
+  const [dailyData, setDailyData] = useState([])
   const [loading, setLoading] = useState(true)
   const [targetStr, setTargetStr] = useState(localStorage.getItem('forecast_target') || '100000')
   const [isEditingTarget, setIsEditingTarget] = useState(false)
@@ -19,15 +20,23 @@ export default function Forecast() {
 
   useEffect(() => {
     let isMounted = true
-    axios.get(`${API}/api/dashboard/companies-revenue`)
-      .then(res => {
-        if (isMounted && res.data && res.data.month) {
-          setData(res.data.month)
+    
+    Promise.all([
+      axios.get(`${API}/api/dashboard/companies-revenue`),
+      axios.get(`${API}/api/dashboard/revenue-chart?group_by=day`)
+    ]).then(([compRes, dailyRes]) => {
+      if (isMounted) {
+        if (compRes.data && compRes.data.month) {
+          setPortalData(compRes.data.month)
         }
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false)
-      })
+        if (dailyRes.data) {
+          setDailyData(dailyRes.data)
+        }
+      }
+    }).finally(() => {
+      if (isMounted) setLoading(false)
+    })
+    
     return () => { isMounted = false }
   }, [])
 
@@ -41,11 +50,13 @@ export default function Forecast() {
   }
 
   const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
   const daysPassed = today.getDate()
-  const totalDays = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+  const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate()
   const daysRemaining = Math.max(totalDays - daysPassed, 1)
 
-  const mtdSales = data.reduce((acc, curr) => acc + curr.value, 0)
+  const mtdSales = portalData.reduce((acc, curr) => acc + curr.value, 0)
   const salesVelocity = mtdSales / (daysPassed || 1)
   const forecast = salesVelocity * totalDays
   
@@ -63,7 +74,7 @@ export default function Forecast() {
      confColor = 'var(--warning-color)'
   }
 
-  const portalStats = data.map(p => {
+  const portalStats = portalData.map(p => {
      const vel = p.value / (daysPassed || 1)
      const pFor = vel * totalDays
      return { ...p, velocity: vel, forecast: pFor }
@@ -71,19 +82,54 @@ export default function Forecast() {
 
   const formatCurrency = (val) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 
-  const chartData = [
-    { name: 'MTD Sales', value: mtdSales, color: '#3b82f6' },
-    { name: 'Forecast', value: forecast, color: confColor }
-  ]
+  // Process daily data to create the line chart (Cumulative Actual vs Target Trajectory)
+  let cumulative = 0
+  const chartData = []
+  
+  // Filter for current month and sort chronologically
+  const currentMonthData = dailyData
+    .filter(d => d._dt && new Date(d._dt).getMonth() === currentMonth && new Date(d._dt).getFullYear() === currentYear)
+    .sort((a, b) => new Date(a._dt) - new Date(b._dt))
+
+  // Map each day of the current month up to today
+  for (let i = 1; i <= daysPassed; i++) {
+    const dateObj = new Date(currentYear, currentMonth, i)
+    const dayLabel = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+    
+    // Find if we have sales for this day
+    const dayData = currentMonthData.find(d => new Date(d._dt).getDate() === i)
+    
+    // Calculate total sales for the day
+    let dayTotal = 0
+    if (dayData) {
+      // Sum all portal sales for the day (excluding metadata keys)
+      Object.keys(dayData).forEach(key => {
+        if (!['month', 'order_count_hg', 'order_count_ho', '_dt'].includes(key)) {
+          dayTotal += (dayData[key] || 0)
+        }
+      })
+    }
+    
+    cumulative += dayTotal
+    const targetTrajectory = (target / totalDays) * i
+    
+    chartData.push({
+      name: dayLabel,
+      'Actual Sales': cumulative,
+      'Target Trajectory': targetTrajectory
+    })
+  }
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div style={{ background: 'rgba(10, 15, 30, 0.95)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', color: '#fff' }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>{label}</p>
-          <p style={{ margin: 0, color: payload[0].payload.color }}>
-            {formatCurrency(payload[0].value)}
-          </p>
+          {payload.map((p, idx) => (
+             <p key={idx} style={{ margin: '0 0 4px 0', color: p.color, fontWeight: 500 }}>
+               {p.name}: {formatCurrency(p.value)}
+             </p>
+          ))}
         </div>
       );
     }
@@ -133,7 +179,7 @@ export default function Forecast() {
         <div className="card" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>MTD Sales</span>
-            <DollarSign size={18} color="#3b82f6" />
+            <DollarSign size={18} color="var(--primary-color)" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{formatCurrency(mtdSales)}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Current month to date</div>
@@ -171,9 +217,9 @@ export default function Forecast() {
         </div>
       </div>
 
-      {/* Velocity and Gap */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '24px' }}>
+      {/* Velocity and Trajectory Chart */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '24px' }}>
+        <div className="card" style={{ padding: '24px', flex: '1 1 300px' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Activity size={18} color="var(--primary-color)" />
             Velocity & Gap Analysis
@@ -205,21 +251,32 @@ export default function Forecast() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: '24px', height: '300px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>Overall Trajectory</h3>
+        <div className="card" style={{ padding: '24px', height: '320px', flex: '2 1 500px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>Cumulative MTD Sales vs Target Trajectory</h3>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)' }} />
-              <YAxis tickFormatter={v => `$${v/1000}k`} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)' }} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
+              <YAxis tickFormatter={v => `$${v/1000}k`} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-              <ReferenceLine y={target} stroke="var(--primary-color)" strokeDasharray="3 3" label={{ position: 'top', value: 'Target', fill: 'var(--primary-color)', fontSize: 12 }} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
+              <Legend wrapperStyle={{ fontSize: 13, paddingTop: '10px' }} />
+              <Line 
+                type="linear" 
+                dataKey="Actual Sales" 
+                stroke="var(--primary-color)" 
+                strokeWidth={3} 
+                dot={{ r: 4, strokeWidth: 2, fill: 'var(--primary-color)', stroke: '#1a1f36' }} 
+                activeDot={{ r: 6 }} 
+              />
+              <Line 
+                type="linear" 
+                dataKey="Target Trajectory" 
+                stroke="var(--success-color)" 
+                strokeWidth={3} 
+                dot={{ r: 4, strokeWidth: 2, fill: 'var(--success-color)', stroke: '#1a1f36' }} 
+                activeDot={{ r: 6 }} 
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -245,7 +302,7 @@ export default function Forecast() {
               {portalStats.map((p, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                   <td style={{ padding: '16px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: p.color || '#3b82f6' }} />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: p.color || 'var(--primary-color)' }} />
                     {p.name}
                   </td>
                   <td style={{ padding: '16px' }}>{formatCurrency(p.value)}</td>
