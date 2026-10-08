@@ -4,7 +4,7 @@ import {
   TrendingUp, Target, Activity, CheckCircle, Clock, AlertTriangle, AlertCircle, DollarSign
 } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  AreaChart, Area, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -66,13 +66,13 @@ export default function Forecast() {
   const targetAchieve = target > 0 ? (mtdSales / target) * 100 : 0
   
   let confidence = 'Low'
-  let confColor = 'var(--danger-color)'
+  let confColor = '#ef4444'
   if (forecast >= target) {
      confidence = 'High'
-     confColor = 'var(--success-color)'
+     confColor = '#10b981'
   } else if (forecast >= target * 0.85) {
      confidence = 'Medium'
-     confColor = 'var(--warning-color)'
+     confColor = '#f59e0b'
   }
 
   const portalStats = portalData.filter(p => selectedPortal === 'All' || p.name === selectedPortal).map(p => {
@@ -109,17 +109,17 @@ export default function Forecast() {
         // or just by exact match if possible.
         // Actually, daily data keys might be exactly portal names. Let's assume they are exact.
         if (dayData[selectedPortal]) {
-           dayTotal += dayData[selectedPortal];
+           dayTotal += (parseFloat(dayData[selectedPortal]) || 0);
         } else {
            // Try to find the closest key (case insensitive or spaces)
            const pKey = Object.keys(dayData).find(k => k.toLowerCase() === selectedPortal.toLowerCase())
-           if (pKey) dayTotal += dayData[pKey];
+           if (pKey) dayTotal += (parseFloat(dayData[pKey]) || 0);
         }
       } else {
         // Sum all portal sales for the day (excluding metadata keys)
         Object.keys(dayData).forEach(key => {
-          if (!['month', 'order_count_hg', 'order_count_ho', '_dt'].includes(key)) {
-            dayTotal += (dayData[key] || 0)
+          if (!['month', 'order_count_hg', 'order_count_ho', '_dt', 'equiv'].includes(key)) {
+            dayTotal += (parseFloat(dayData[key]) || 0)
           }
         })
       }
@@ -163,7 +163,7 @@ export default function Forecast() {
           <p style={{ margin: 0, color: 'var(--text-muted)' }}>Projecting month-end performance for your sales channels.</p>
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <select value={selectedPortal} onChange={(e) => setSelectedPortal(e.target.value)} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', padding: '6px 12px', outline: 'none' }}>
+          <select value={selectedPortal} onChange={(e) => setSelectedPortal(e.target.value)} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', padding: '6px 12px', outline: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
             <option value="All">All Sites</option>
             {portalData.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
@@ -195,44 +195,52 @@ export default function Forecast() {
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card" style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(30,58,138,0.05) 100%)', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 4px 20px rgba(59,130,246,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>MTD Sales</span>
-            <DollarSign size={18} color="var(--primary-color)" />
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>MTD Sales</span>
+            <div style={{ background: 'rgba(59,130,246,0.2)', padding: '6px', borderRadius: '8px' }}>
+              <DollarSign size={18} color="#3b82f6" />
+            </div>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{formatCurrency(mtdSales)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Current month to date</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, marginBottom: '4px', background: 'linear-gradient(to right, #60a5fa, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{formatCurrency(mtdSales)}</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Current month to date</div>
         </div>
 
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card" style={{ padding: '20px', background: `linear-gradient(135deg, ${confColor}15 0%, rgba(0,0,0,0) 100%)`, border: `1px solid ${confColor}30`, boxShadow: `0 4px 20px ${confColor}10` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Forecast</span>
-            <TrendingUp size={18} color={confColor} />
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>Forecast</span>
+            <div style={{ background: `${confColor}20`, padding: '6px', borderRadius: '8px' }}>
+              <TrendingUp size={18} color={confColor} />
+            </div>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px', color: confColor }}>{formatCurrency(forecast)}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Projected month end</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, marginBottom: '4px', color: confColor }}>{formatCurrency(forecast)}</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Projected month end</div>
         </div>
 
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card" style={{ padding: '20px', background: targetAchieve >= 100 ? 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(6,78,59,0.05) 100%)' : 'var(--surface-color)', border: targetAchieve >= 100 ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Target Achieved</span>
-            <CheckCircle size={18} color={targetAchieve >= 100 ? "var(--success-color)" : "var(--primary-color)"} />
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>Target Achieved</span>
+            <div style={{ background: targetAchieve >= 100 ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)', padding: '6px', borderRadius: '8px' }}>
+              <CheckCircle size={18} color={targetAchieve >= 100 ? "#10b981" : "#3b82f6"} />
+            </div>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{targetAchieve.toFixed(1)}%</div>
-          <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '4px', borderRadius: '2px', marginTop: '8px' }}>
-            <div style={{ width: `${Math.min(targetAchieve, 100)}%`, background: targetAchieve >= 100 ? 'var(--success-color)' : 'var(--primary-color)', height: '100%', borderRadius: '2px' }} />
+          <div style={{ fontSize: '28px', fontWeight: 800, marginBottom: '4px', color: targetAchieve >= 100 ? '#10b981' : '#fff' }}>{targetAchieve.toFixed(1)}%</div>
+          <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.min(targetAchieve, 100)}%`, background: targetAchieve >= 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #60a5fa)', height: '100%', borderRadius: '3px', transition: 'width 0.5s ease' }} />
           </div>
         </div>
 
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card" style={{ padding: '20px', background: `linear-gradient(135deg, ${confColor}10 0%, rgba(0,0,0,0) 100%)`, border: `1px solid ${confColor}25` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Confidence</span>
-            {confidence === 'High' ? <CheckCircle size={18} color={confColor} /> : 
-             confidence === 'Medium' ? <AlertCircle size={18} color={confColor} /> : 
-             <AlertTriangle size={18} color={confColor} />}
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>Confidence</span>
+            <div style={{ background: `${confColor}20`, padding: '6px', borderRadius: '8px' }}>
+              {confidence === 'High' ? <CheckCircle size={18} color={confColor} /> : 
+               confidence === 'Medium' ? <AlertCircle size={18} color={confColor} /> : 
+               <AlertTriangle size={18} color={confColor} />}
+            </div>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px', color: confColor }}>{confidence}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>To hit monthly target</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, marginBottom: '4px', color: confColor }}>{confidence}</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>To hit monthly target</div>
         </div>
       </div>
 
@@ -271,32 +279,42 @@ export default function Forecast() {
         </div>
 
         <div className="card" style={{ padding: '24px', height: '320px', flex: '2 1 500px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>Cumulative MTD Sales vs Target Trajectory</h3>
+                    <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>Cumulative MTD Sales vs Target Trajectory</h3>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+              <defs>
+                <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
               <YAxis tickFormatter={v => `$${v/1000}k`} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
               <Legend wrapperStyle={{ fontSize: 13, paddingTop: '10px' }} />
-              <Line 
+              <Area 
                 type="linear" 
                 dataKey="Actual Sales" 
-                stroke="#3b82f6" isAnimationActive={false} 
+                stroke="#3b82f6" 
+                fillOpacity={1} 
+                fill="url(#colorActual)" 
                 strokeWidth={3} 
+                isAnimationActive={false}
                 dot={{ r: 4, strokeWidth: 2, fill: '#3b82f6', stroke: '#1a1f36' }} 
                 activeDot={{ r: 6 }} 
               />
               <Line 
                 type="linear" 
                 dataKey="Target Trajectory" 
-                stroke="#10b981" isAnimationActive={false} 
+                stroke="#10b981" 
                 strokeWidth={3} 
+                isAnimationActive={false}
+                strokeDasharray="5 5"
                 dot={{ r: 4, strokeWidth: 2, fill: '#10b981', stroke: '#1a1f36' }} 
                 activeDot={{ r: 6 }} 
               />
-            </LineChart>
-          </ResponsiveContainer>
+            </ComposedChart>
         </div>
       </div>
 
