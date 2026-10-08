@@ -10,6 +10,7 @@ import {
 const NAV = [
   { label: 'Main', items: [
     { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',   permission: 'dashboard' },
+    { to: '/forecast',   icon: BarChart2,       label: 'Sales Forecast', permission: 'dashboard' },
   ]},
   { label: 'Finance & People', items: [
     { to: '/accounts',   icon: DollarSign,      label: 'Accounts',    permission: 'accounts' },

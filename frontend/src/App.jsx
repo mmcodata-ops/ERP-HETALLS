@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar'
 import Header  from './components/Header'
 import Login   from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Forecast from './pages/Forecast'
 import Ecommerce from './pages/Ecommerce'
 import Inventory from './pages/Inventory'
 import Accounts  from './pages/Accounts'
@@ -38,6 +39,7 @@ function AppLayout() {
         <div className="page-body">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/forecast" element={<Forecast />} />
             <Route path="/ecommerce" element={<Ecommerce />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/accounts"  element={<Accounts />} />
