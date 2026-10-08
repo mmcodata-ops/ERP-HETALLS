@@ -17,6 +17,7 @@ const isHO = (name) => name?.toUpperCase().includes('HETALLS')
 
 export default function Forecast() {
   const [portalData, setPortalData] = useState([])
+  const [todayPortalData, setTodayPortalData] = useState([])
   const [dailyData, setDailyData] = useState([])
   const [countryData, setCountryData] = useState({ hg: [], ho: [] })
   const [loading, setLoading] = useState(true)
@@ -53,7 +54,10 @@ export default function Forecast() {
       axios.get(`${API}/api/dashboard/country-sales`).catch(() => ({ data: { hg: [], ho: [] } }))
     ]).then(([compRes, dailyRes, countryRes]) => {
       if (isMounted) {
-        if (compRes.data && compRes.data.month) setPortalData(compRes.data.month)
+        if (compRes.data) {
+          if (compRes.data.month) setPortalData(compRes.data.month)
+          if (compRes.data.today) setTodayPortalData(compRes.data.today)
+        }
         if (dailyRes.data) setDailyData(dailyRes.data)
         if (countryRes.data) setCountryData(countryRes.data)
       }
@@ -92,7 +96,14 @@ export default function Forecast() {
   const filteredPortalData = hghoFiltered.filter(p => selectedPortal === 'All' || p.name === selectedPortal)
   const mtdSales = filteredPortalData.reduce((acc, curr) => acc + curr.value, 0)
 
+  // Strict HG vs HO portal filtering for Today's Sales
+  const todayHghoFiltered = todayPortalData.filter(p => companyView === 'ho' ? isHO(p.name) : !isHO(p.name))
+  const filteredTodayData = todayHghoFiltered.filter(p => selectedPortal === 'All' || p.name === selectedPortal)
+  const todaySales = filteredTodayData.reduce((acc, curr) => acc + (curr.value || 0), 0)
+  const todayOrders = filteredTodayData.reduce((acc, curr) => acc + (curr.order_count || 0), 0)
+
   const salesVelocity = mtdSales / (daysPassed || 1)
+  const targetDailyPace = target > 0 ? target / (totalDays || 1) : 0
   const forecast = salesVelocity * totalDays
 
   const salesGap = Math.max(target - mtdSales, 0)
@@ -272,7 +283,7 @@ export default function Forecast() {
 
   const aiInsights = generateAIInsights()
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label, coordinate }) => {
     if (active && payload && payload.length) {
       const actualItem = payload.find(p => p.dataKey === 'Actual Sales' && p.value !== null && p.value !== undefined)
       const projectedItem = payload.find(p => p.dataKey === 'Projected Pace' && p.value !== null && p.value !== undefined)
@@ -290,15 +301,24 @@ export default function Forecast() {
       const diffAbs = diff !== null ? Math.abs(diff) : null
       const isAhead = diff !== null && diff >= 0
 
+      // Tooltip position: show on the LEFT side of hover cursor/point (per user request)
+      // If cursor is near extreme left (< 200px), show to right to prevent off-screen clipping
+      const shiftLeft = !coordinate || coordinate.x >= 200
+
       return (
         <div style={{
           background: 'rgba(10, 15, 30, 0.96)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           padding: '12px 14px',
           borderRadius: '10px',
           color: '#fff',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-          minWidth: '220px'
+          minWidth: '220px',
+          transform: shiftLeft ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          transition: 'transform 0.05s ease-out',
+          pointerEvents: 'none'
         }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px' }}>
             {label}
@@ -429,25 +449,53 @@ export default function Forecast() {
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Forecast</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: confColor }}>{formatCurrency(forecast)}</div>
         </div>
-        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${targetAchieve >= 100 ? '#10b981' : themeColors.accent}` }}>
+        {/* Card 3: Today's Sales replacing Target Achieved */}
+        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${themeColors.accent}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Target Achieved</span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: paceDifference >= 0 ? '#10b981' : '#f59e0b' }}>
-              {paceDifference >= 0 ? `+${formatCurrency(paceDifference)}` : `-${formatCurrency(Math.abs(paceDifference))}`}
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Today's Sales</span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              padding: '1px 6px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: themeColors.accent
+            }}>
+              {companyView.toUpperCase()}
             </span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 700 }}>{targetAchieve.toFixed(1)}%</div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {paceDifference >= 0 ? 'Ahead of MTD target pace' : `${formatCurrency(Math.abs(paceDifference))} behind MTD pace`}
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{formatCurrency(todaySales)}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+            <span>{todayOrders} order{todayOrders === 1 ? '' : 's'} today</span>
+            <span>Target: {formatCurrency(targetDailyPace)}/d</span>
           </div>
         </div>
         <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${confColor}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Confidence</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: confColor }}>{confidence}</div>
         </div>
+        {/* Card 5: Velocity showing both Present Sales and Target Velocity */}
         <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${themeColors.secondary}` }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Velocity</div>
-          <div style={{ fontSize: '20px', fontWeight: 700 }}>{formatCurrency(salesVelocity)}/d</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Velocity</span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              padding: '1px 6px',
+              borderRadius: '8px',
+              background: salesVelocity >= targetDailyPace ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+              color: salesVelocity >= targetDailyPace ? '#10b981' : '#f59e0b'
+            }}>
+              {salesVelocity >= targetDailyPace ? 'On Track' : 'Below Target'}
+            </span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>
+            {formatCurrency(salesVelocity)}<span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>/d</span>
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+            <span>Target: <strong style={{ color: themeColors.accent }}>{formatCurrency(targetDailyPace)}/d</strong></span>
+            {salesGap > 0 && <span>Need: <strong style={{ color: '#f59e0b' }}>{formatCurrency(requiredVelocity)}/d</strong></span>}
+          </div>
         </div>
         <div className="card" style={{ padding: '16px', borderLeft: '4px solid #ef4444' }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Sales Gap</div>
@@ -455,17 +503,44 @@ export default function Forecast() {
         </div>
       </div>
 
-      {/* ── Simple 4-Portion Target Progress Line (Pure line, no text) ── */}
+      {/* ── 4-Portion Target Progress Line with Integrated Target Achieved Info ── */}
       <div style={{ marginBottom: '24px', padding: '0 2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Target Achieved:</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>
+              {targetAchieve.toFixed(1)}%
+            </span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              background: paceDifference >= 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+              color: paceDifference >= 0 ? '#10b981' : '#f59e0b',
+              border: `1px solid ${paceDifference >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+            }}>
+              {paceDifference >= 0 ? `+${formatCurrency(paceDifference)} Ahead` : `-${formatCurrency(Math.abs(paceDifference))} Behind`}
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              ({paceDifference >= 0 ? 'Ahead of MTD target pace' : `${formatCurrency(Math.abs(paceDifference))} behind MTD pace`})
+            </span>
+          </div>
+
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
+            <strong style={{ color: '#fff' }}>{formatCurrency(mtdSales)}</strong> of <strong style={{ color: themeColors.accent }}>{formatCurrency(target)}</strong> target
+          </div>
+        </div>
+
         <div style={{
           position: 'relative',
-          height: '8px',
+          height: '10px',
           background: 'rgba(255, 255, 255, 0.06)',
           borderRadius: '999px',
           overflow: 'hidden',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)'
-        }}>
+        }} className={targetAchieve >= 100 ? themeColors.celebrateClass : ''}>
           {/* Progress fill from left to right */}
           <div style={{
             width: `${Math.min(targetAchieve, 100)}%`,
@@ -611,8 +686,8 @@ export default function Forecast() {
                   width={46}
                 />
                 <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  content={(props) => <CustomTooltip {...props} />}
+                  cursor={{ stroke: 'rgba(255, 255, 255, 0.25)', strokeWidth: 1, strokeDasharray: '3 3' }}
                   wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
