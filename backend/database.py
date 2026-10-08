@@ -185,6 +185,11 @@ def receive_before_flush(session, flush_context, instances):
     if audit_entries:
         session.execute(AuditLog.__table__.insert(), audit_entries)
 
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+    key   = Column(String, primary_key=True, index=True)
+    value = Column(String, nullable=False)
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def get_db():

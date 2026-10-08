@@ -22,8 +22,8 @@ export default function Forecast() {
   const [countryData, setCountryData] = useState({ hg: [], ho: [] })
   const [loading, setLoading] = useState(true)
 
-  // 1. Independent targets for HG and HO
-  const [targetHgStr, setTargetHgStr] = useState(localStorage.getItem('forecast_target_hg') || '125000')
+  // 1. Independent targets for HG and HO (saved to database and cached in localStorage)
+  const [targetHgStr, setTargetHgStr] = useState(localStorage.getItem('forecast_target_hg') || '120000')
   const [targetHoStr, setTargetHoStr] = useState(localStorage.getItem('forecast_target_ho') || '25000')
   const [isEditingTarget, setIsEditingTarget] = useState(false)
   const [selectedPortal, setSelectedPortal] = useState('All')
@@ -45,14 +45,15 @@ export default function Forecast() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Fetch all necessary data
+  // Fetch all necessary data including persistent database targets
   useEffect(() => {
     let isMounted = true
     Promise.all([
       axios.get(`${API}/api/dashboard/companies-revenue`),
       axios.get(`${API}/api/dashboard/revenue-chart?group_by=day`),
-      axios.get(`${API}/api/dashboard/country-sales`).catch(() => ({ data: { hg: [], ho: [] } }))
-    ]).then(([compRes, dailyRes, countryRes]) => {
+      axios.get(`${API}/api/dashboard/country-sales`).catch(() => ({ data: { hg: [], ho: [] } })),
+      axios.get(`${API}/api/dashboard/targets`).catch(() => ({ data: null }))
+    ]).then(([compRes, dailyRes, countryRes, targetRes]) => {
       if (isMounted) {
         if (compRes.data) {
           if (compRes.data.month) setPortalData(compRes.data.month)
@@ -60,6 +61,16 @@ export default function Forecast() {
         }
         if (dailyRes.data) setDailyData(dailyRes.data)
         if (countryRes.data) setCountryData(countryRes.data)
+        if (targetRes && targetRes.data) {
+          if (targetRes.data.hg) {
+            setTargetHgStr(String(targetRes.data.hg))
+            localStorage.setItem('forecast_target_hg', String(targetRes.data.hg))
+          }
+          if (targetRes.data.ho) {
+            setTargetHoStr(String(targetRes.data.ho))
+            localStorage.setItem('forecast_target_ho', String(targetRes.data.ho))
+          }
+        }
       }
     }).finally(() => {
       if (isMounted) setLoading(false)
@@ -75,11 +86,18 @@ export default function Forecast() {
     }
   }
 
-  const handleTargetSave = () => {
+  const handleTargetSave = async () => {
+    const val = companyView === 'ho' ? targetHoStr : targetHgStr
+    const key = companyView
     if (companyView === 'ho') {
       localStorage.setItem('forecast_target_ho', targetHoStr)
     } else {
       localStorage.setItem('forecast_target_hg', targetHgStr)
+    }
+    try {
+      await axios.post(`${API}/api/dashboard/targets`, { key, value: String(val) })
+    } catch (err) {
+      console.warn('Could not persist target to server:', err)
     }
     setIsEditingTarget(false)
   }
@@ -301,9 +319,11 @@ export default function Forecast() {
       const diffAbs = diff !== null ? Math.abs(diff) : null
       const isAhead = diff !== null && diff >= 0
 
-      // Tooltip position: show on the LEFT side of hover cursor/point (per user request)
-      // If cursor is near extreme left (< 200px), show to right to prevent off-screen clipping
-      const shiftLeft = !coordinate || coordinate.x >= 200
+      // Request 1: Ensure tooltip is 100% visible on both left and right sides without clipping
+      // Tooltip is ~240px wide. Need at least 260px from the left edge of the chart to render on the left of the cursor.
+      // If cursor x >= 260px (mid-to-right days, like Day 13 to 31): render to the LEFT of the cursor.
+      // If cursor x < 260px (left days, like Day 1 to 12): render to the RIGHT of the cursor.
+      const shiftLeft = coordinate ? coordinate.x >= 260 : false
 
       return (
         <div style={{

@@ -981,6 +981,35 @@ def country_sales(current_user=Depends(get_current_user)):
         "ho": format_list(ho_countries)
     }
 
+from pydantic import BaseModel
+from database import get_db, AppSetting
+from sqlalchemy.orm import Session
+
+class TargetUpdate(BaseModel):
+    key: str
+    value: str
+
+@router.get("/targets")
+def get_targets(db: Session = Depends(get_db)):
+    hg = db.query(AppSetting).filter(AppSetting.key == "forecast_target_hg").first()
+    ho = db.query(AppSetting).filter(AppSetting.key == "forecast_target_ho").first()
+    return {
+        "hg": hg.value if hg else "120000",
+        "ho": ho.value if ho else "25000"
+    }
+
+@router.post("/targets")
+def update_target(data: TargetUpdate, db: Session = Depends(get_db)):
+    setting_key = f"forecast_target_{data.key.lower()}"
+    setting = db.query(AppSetting).filter(AppSetting.key == setting_key).first()
+    if setting:
+        setting.value = str(data.value)
+    else:
+        setting = AppSetting(key=setting_key, value=str(data.value))
+        db.add(setting)
+    db.commit()
+    return {"status": "ok", "key": setting_key, "value": str(data.value)}
+
 
 # Background thread to keep data fresh instantly
 def background_sheet_sync():

@@ -91,7 +91,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         </div>
 
-        <nav className="sidebar-nav" ref={navRef} style={{ position: 'relative' }}>
+        <nav className="sidebar-nav sidebar-inner-dock" ref={navRef} style={{ position: 'relative' }}>
           <div className="sidebar-pill" style={{
             position: 'absolute',
             top: pillStyle.top,
