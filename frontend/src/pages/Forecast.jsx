@@ -15,6 +15,7 @@ export default function Forecast() {
   const [loading, setLoading] = useState(true)
   const [targetStr, setTargetStr] = useState(localStorage.getItem('forecast_target') || '100000')
   const [isEditingTarget, setIsEditingTarget] = useState(false)
+  const [selectedPortal, setSelectedPortal] = useState('All')
 
   const target = parseFloat(targetStr) || 0
 
@@ -56,7 +57,7 @@ export default function Forecast() {
   const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate()
   const daysRemaining = Math.max(totalDays - daysPassed, 1)
 
-  const mtdSales = portalData.reduce((acc, curr) => acc + curr.value, 0)
+  const mtdSales = portalData.filter(p => selectedPortal === 'All' || p.name === selectedPortal).reduce((acc, curr) => acc + curr.value, 0)
   const salesVelocity = mtdSales / (daysPassed || 1)
   const forecast = salesVelocity * totalDays
   
@@ -74,7 +75,7 @@ export default function Forecast() {
      confColor = 'var(--warning-color)'
   }
 
-  const portalStats = portalData.map(p => {
+  const portalStats = portalData.filter(p => selectedPortal === 'All' || p.name === selectedPortal).map(p => {
      const vel = p.value / (daysPassed || 1)
      const pFor = vel * totalDays
      return { ...p, velocity: vel, forecast: pFor }
@@ -102,12 +103,26 @@ export default function Forecast() {
     // Calculate total sales for the day
     let dayTotal = 0
     if (dayData) {
-      // Sum all portal sales for the day (excluding metadata keys)
-      Object.keys(dayData).forEach(key => {
-        if (!['month', 'order_count_hg', 'order_count_ho', '_dt'].includes(key)) {
-          dayTotal += (dayData[key] || 0)
+      if (selectedPortal !== 'All') {
+        // If a specific portal is selected, only add its sales for the day
+        // We match by checking if the portal name (or something close) is in the keys
+        // or just by exact match if possible.
+        // Actually, daily data keys might be exactly portal names. Let's assume they are exact.
+        if (dayData[selectedPortal]) {
+           dayTotal += dayData[selectedPortal];
+        } else {
+           // Try to find the closest key (case insensitive or spaces)
+           const pKey = Object.keys(dayData).find(k => k.toLowerCase() === selectedPortal.toLowerCase())
+           if (pKey) dayTotal += dayData[pKey];
         }
-      })
+      } else {
+        // Sum all portal sales for the day (excluding metadata keys)
+        Object.keys(dayData).forEach(key => {
+          if (!['month', 'order_count_hg', 'order_count_ho', '_dt'].includes(key)) {
+            dayTotal += (dayData[key] || 0)
+          }
+        })
+      }
     }
     
     cumulative += dayTotal
@@ -144,10 +159,14 @@ export default function Forecast() {
     <div className="dashboard" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px 0' }}>Month End Sales Forecast</h1>
-          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Projecting month-end performance based on MTD sales.</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px 0' }}>Site Preview</h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Projecting month-end performance for your sales channels.</p>
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <select value={selectedPortal} onChange={(e) => setSelectedPortal(e.target.value)} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', padding: '6px 12px', outline: 'none' }}>
+            <option value="All">All Sites</option>
+            {portalData.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+          </select>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             Day {daysPassed} of {totalDays}
           </div>

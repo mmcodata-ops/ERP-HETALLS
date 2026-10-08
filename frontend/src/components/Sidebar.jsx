@@ -4,12 +4,20 @@ import { useAuth } from '../context/AuthContext'
 import { useMessages } from '../context/MessagesContext'
 import {
   LayoutDashboard, ShoppingCart, Package, DollarSign,
-  Users, BarChart2, Settings, LogOut, Layers, MessageSquare, X
+  Users, BarChart2, Settings, LogOut, Layers, MessageSquare, X, ChevronDown, ChevronRight, Monitor
 } from 'lucide-react'
 
 const NAV = [
   { label: 'Main', items: [
-    { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',   permission: 'dashboard' },
+    { 
+      label: 'Dashboards', 
+      icon: LayoutDashboard, 
+      permission: 'dashboard',
+      dropdown: [
+        { to: '/dashboard', label: 'Main Dashboard' },
+        { to: '/forecast',  label: 'Site Preview' }
+      ]
+    },
   ]},
   { label: 'Finance & People', items: [
     { to: '/accounts',   icon: DollarSign,      label: 'Accounts',    permission: 'accounts' },
@@ -25,10 +33,11 @@ const NAV = [
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { user, logout } = useAuth()
   const { unreadCount } = useMessages()
-    const navigate = useNavigate()
+  const navigate = useNavigate()
   const location = useLocation()
   const navRef = useRef(null)
   const [pillStyle, setPillStyle] = useState({ top: 0, height: 0, opacity: 0 })
+  const [openDropdowns, setOpenDropdowns] = useState({ 'Dashboards': true })
 
   useEffect(() => {
     // Wait for render, then find active element
@@ -45,7 +54,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         setPillStyle(p => ({ ...p, opacity: 0 }))
       }
     }, 50)
-  }, [location.pathname])
+  }, [location.pathname, openDropdowns])
 
   const canSee = (item) => {
     if (!item.role && !item.permission) return true
@@ -89,7 +98,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         </div>
 
-                <nav className="sidebar-nav" ref={navRef} style={{ position: 'relative' }}>
+        <nav className="sidebar-nav" ref={navRef} style={{ position: 'relative' }}>
           <div className="sidebar-pill" style={{
             position: 'absolute',
             top: pillStyle.top,
@@ -108,51 +117,84 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {NAV.map(section => {
             const visible = section.items.filter(i => canSee(i))
             if (!visible.length) return null
+
             return (
               <div key={section.label}>
                 <div className="nav-section-label">{section.label}</div>
-                {visible.map(item => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end
-                    onClick={() => setSidebarOpen && setSidebarOpen(false)}
-                    style={{ position: 'relative', zIndex: 1 }}
-                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                  >
-                  <item.icon size={17} />
-                  {item.label}
-                  {item.label === 'Messages' && unreadCount > 0 && (
-                    <span style={{
-                      marginLeft: 'auto',
-                      backgroundColor: 'var(--danger)',
-                      color: '#fff',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      borderRadius: '10px',
-                      padding: '2px 6px',
-                      minWidth: '18px',
-                      textAlign: 'center'
-                    }}>
-                      {unreadCount}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
+                {visible.map(item => {
+                  if (item.dropdown) {
+                    return (
+                      <div key={item.label}>
+                        <div 
+                          className="nav-item" 
+                          style={{ cursor: 'pointer', position: 'relative', zIndex: 1 }}
+                          onClick={() => setOpenDropdowns(p => ({ ...p, [item.label]: !p[item.label] }))}
+                        >
+                          <item.icon size={17} />
+                          {item.label}
+                          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                            {openDropdowns[item.label] ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          height: openDropdowns[item.label] ? 'auto' : 0, 
+                          overflow: 'hidden', 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          paddingLeft: '12px'
+                        }}>
+                          {item.dropdown.map(sub => (
+                            <NavLink
+                              key={sub.to}
+                              to={sub.to}
+                              end
+                              onClick={() => setSidebarOpen && setSidebarOpen(false)}
+                              style={{ position: 'relative', zIndex: 1, padding: '8px 12px', minHeight: '36px', marginTop: '4px' }}
+                              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                            >
+                              <div style={{ width: '4px', height: '4px', background: 'currentColor', borderRadius: '50%', marginRight: '12px', opacity: 0.5 }} />
+                              {sub.label}
+                            </NavLink>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end
+                      onClick={() => setSidebarOpen && setSidebarOpen(false)}
+                      style={{ position: 'relative', zIndex: 1 }}
+                      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                    >
+                    <item.icon size={17} />
+                    {item.label}
+                    {item.label === 'Messages' && unreadCount > 0 && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        backgroundColor: 'var(--danger)',
+                        color: '#fff',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        borderRadius: '10px',
+                        padding: '2px 6px',
+                        minWidth: '18px',
+                        textAlign: 'center'
+                      }}>
+                        {unreadCount}
+                      </span>
+                    )}
+                  </NavLink>
+                  )
+                })}
             </div>
           )
         })}
       </nav>
 
-      <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)' }}>
-        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>Forecast View</span>
-        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <input type="checkbox" style={{ display: 'none' }} checked={location.pathname === '/forecast'} onChange={(e) => navigate(e.target.checked ? '/forecast' : '/dashboard')} />
-          <div style={{ width: '32px', height: '18px', background: location.pathname === '/forecast' ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)', borderRadius: '9px', position: 'relative', transition: 'background 0.3s' }}>
-            <div style={{ width: '14px', height: '14px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '2px', left: location.pathname === '/forecast' ? '16px' : '2px', transition: 'left 0.3s' }} />
-          </div>
-        </label>
-      </div>
       <div className="sidebar-user">
         <div className="user-avatar">{initials}</div>
         <div className="user-info">
