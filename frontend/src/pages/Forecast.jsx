@@ -487,7 +487,7 @@ export default function Forecast() {
       <div className="forecast-grid-2col">
 
         {/* Requirement 2: Sales Overview Chart for WHOLE MONTH */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+        <div className="card forecast-chart-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <div className="forecast-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
             <div style={{ flex: '1 1 200px', minWidth: '180px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sales Overview (Full Month)</h3>
@@ -497,7 +497,7 @@ export default function Forecast() {
             </div>
 
             {/* Liquid Glass Channel Dropdown */}
-            <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0, zIndex: 95 }}>
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 style={{
@@ -521,61 +521,73 @@ export default function Forecast() {
               </div>
 
               {isDropdownOpen && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '8px',
-                  width: '240px',
-                  background: 'rgba(15, 23, 42, 0.95)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
-                  zIndex: 50,
-                  overflow: 'hidden'
-                }}>
+                <>
                   <div
-                    onClick={() => { setSelectedPortal('All'); setIsDropdownOpen(false); }}
-                    style={{
-                      padding: '10px 16px',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      background: selectedPortal === 'All' ? 'rgba(59,130,246,0.4)' : 'transparent',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)'
-                    }}
-                  >
-                    All Channels
+                    onClick={() => setIsDropdownOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 90, cursor: 'default' }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '8px',
+                    width: '240px',
+                    maxWidth: 'calc(100vw - 48px)',
+                    background: 'rgba(15, 23, 42, 0.98)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.7)',
+                    zIndex: 100,
+                    overflow: 'hidden'
+                  }}>
+                    <div
+                      onClick={() => { setSelectedPortal('All'); setIsDropdownOpen(false); }}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        background: selectedPortal === 'All' ? 'rgba(59,130,246,0.4)' : 'transparent',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)'
+                      }}
+                    >
+                      All Channels
+                    </div>
+                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                      {hghoFiltered.map((p, idx) => (
+                        <div
+                          key={p.name}
+                          onClick={() => { setSelectedPortal(p.name); setIsDropdownOpen(false); }}
+                          style={{
+                            padding: '10px 16px',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            background: selectedPortal === p.name ? 'rgba(59,130,246,0.4)' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: getPortalColor(p.name, idx) }} />
+                          {p.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                    {hghoFiltered.map((p, idx) => (
-                      <div
-                        key={p.name}
-                        onClick={() => { setSelectedPortal(p.name); setIsDropdownOpen(false); }}
-                        style={{
-                          padding: '10px 16px',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          background: selectedPortal === p.name ? 'rgba(59,130,246,0.4)' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                      >
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: getPortalColor(p.name, idx) }} />
-                        {p.name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                </>
               )}
             </div>
           </div>
 
-          <div style={{ flex: 1, minHeight: '340px' }}>
+          <div
+            className="forecast-chart-wrapper"
+            style={{ flex: 1, minHeight: '340px' }}
+            onMouseDown={() => setIsDropdownOpen(false)}
+            onTouchStart={() => setIsDropdownOpen(false)}
+          >
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
@@ -585,19 +597,24 @@ export default function Forecast() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="name"
+                  ticks={[1, 5, 10, 15, 20, 25, totalDays].map(day => `${String(day).padStart(2, '0')} ${currentMonthName}`)}
+                  tickFormatter={(val) => `${parseInt(val)}`}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                  interval={2}
                 />
                 <YAxis
                   tickFormatter={v => `$${v / 1000}k`}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                  width={50}
+                  width={46}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
 
                 {/* Actual Sales Line (through Day 8) */}
