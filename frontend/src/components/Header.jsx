@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Menu } from 'lucide-react'
 
 const PAGE_TITLES = {
   '/dashboard': { title: 'Dashboard',   sub: 'Welcome back — here\'s your business overview' },
+  '/forecast':  { title: 'Site Preview', sub: 'Sales forecast, channel analysis & country performance' },
   '/ecommerce': { title: 'E-Commerce',  sub: 'Amazon FBA & Etsy orders management' },
   '/inventory': { title: 'Inventory',   sub: 'Product catalog & stock management' },
   '/accounts':  { title: 'Accounts',    sub: 'Invoices, expenses & financial overview' },
@@ -16,11 +18,21 @@ const PAGE_TITLES = {
 export default function Header({ setSidebarOpen }) {
   const { pathname } = useLocation()
   const { user } = useAuth()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const page = PAGE_TITLES[pathname] || { title: 'ERP', sub: '' }
   const now  = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
-    <header className="header">
+    <header className={`header ${scrolled ? 'scrolled-black' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <button 
           className="mobile-menu-btn"

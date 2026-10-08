@@ -921,6 +921,66 @@ def today_orders(current_user=Depends(get_current_user)):
     for o in valid_orders: del o["_dt"]
     return valid_orders
 
+@router.get("/country-sales")
+def country_sales(current_user=Depends(get_current_user)):
+    orders_data = fetch_sheet_csv("ORDERS")
+    mkm_orders_data = fetch_mkm_orders_sheet_csv()
+    hetalls_data = fetch_hetalls_sheet_csv()
+    
+    now = datetime.now()
+    current_year = now.year
+    current_month = now.month
+    
+    hg_countries = {}
+    ho_countries = {}
+    
+    # 1. ORDERS (HG)
+    for row in orders_data[1:]:
+        if len(row) < 37: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8])
+        if dt and dt.year == current_year and dt.month == current_month:
+            c = row[26].strip() if len(row) > 26 and row[26].strip() else "United States"
+            price = parse_price(row[36])
+            if price > 0:
+                hg_countries[c] = hg_countries.get(c, 0.0) + price
+                
+    # 2. MKM (HG)
+    for row in mkm_orders_data[1:]:
+        if len(row) < 27: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8])
+        if dt and dt.year == current_year and dt.month == current_month:
+            c = row[25].strip() if len(row) > 25 and row[25].strip() else "United States"
+            price = parse_price(row[26])
+            if price > 0:
+                hg_countries[c] = hg_countries.get(c, 0.0) + price
+                
+    # 3. HETALLS (HO)
+    for row in hetalls_data[1:]:
+        if len(row) < 37: continue
+        status = row[14].strip().lower() if len(row) > 14 else ""
+        if status == "returned": continue
+        dt = parse_date(row[8])
+        if dt and dt.year == current_year and dt.month == current_month:
+            c = row[26].strip() if len(row) > 26 and row[26].strip() else "United States"
+            price = parse_price(row[36])
+            if price > 0:
+                ho_countries[c] = ho_countries.get(c, 0.0) + price
+
+    def format_list(d):
+        total = sum(d.values()) or 1.0
+        items = [{"country": k, "value": round(v, 2), "pct": round((v / total) * 100, 1)} for k, v in d.items()]
+        items.sort(key=lambda x: x["value"], reverse=True)
+        return items
+
+    return {
+        "hg": format_list(hg_countries),
+        "ho": format_list(ho_countries)
+    }
+
 
 # Background thread to keep data fresh instantly
 def background_sheet_sync():
