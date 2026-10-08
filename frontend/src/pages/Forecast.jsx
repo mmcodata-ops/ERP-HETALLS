@@ -168,15 +168,7 @@ export default function Forecast() {
     })
   }
 
-  // 3. 4-PART MILESTONE CONFIGURATION
-  const milestones = [
-    { label: 'Q1 Kickoff', pct: 25, value: target * 0.25, icon: '🎯' },
-    { label: 'Q2 Halfway', pct: 50, value: target * 0.50, icon: '🔥' },
-    { label: 'Q3 Acceleration', pct: 75, value: target * 0.75, icon: '⚡' },
-    { label: 'Q4 Final Goal', pct: 100, value: target * 1.00, icon: '🏆' }
-  ]
-
-  // Color scheme based on HG vs HO
+  // 3. Color scheme based on HG vs HO
   const themeColors = companyView === 'ho' ? {
     name: 'H.O. (Hetalls)',
     accent: '#06b6d4',
@@ -393,98 +385,31 @@ export default function Forecast() {
         </div>
       </div>
 
-      {/* ── Requirement 3: 4-Portion Milestone Target Progress Bar with Celebration Animation ── */}
-      <div className="card" style={{ padding: '20px 24px', marginBottom: '24px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Award size={20} color={themeColors.accent} />
-            <div>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>
-                {themeColors.name} Target Milestones (4 Phases)
-              </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>
-                4-Stage Goal Progression
-              </span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: themeColors.accent }}>
-              {targetAchieve.toFixed(1)}% Achieved
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              ({formatCurrency(mtdSales)} / {formatCurrency(target)})
-            </span>
-          </div>
-        </div>
-
-        {/* 4-Portion Progress Bar Track */}
-        <div style={{ position: 'relative', height: '16px', background: 'rgba(0,0,0,0.4)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+      {/* ── Simple 4-Portion Target Progress Line (Pure line, no text) ── */}
+      <div style={{ marginBottom: '24px', padding: '0 2px' }}>
+        <div style={{
+          position: 'relative',
+          height: '8px',
+          background: 'rgba(255, 255, 255, 0.06)',
+          borderRadius: '999px',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)'
+        }}>
           {/* Progress fill from left to right */}
           <div style={{
             width: `${Math.min(targetAchieve, 100)}%`,
             height: '100%',
             background: themeColors.gradient,
-            borderRadius: '12px',
-            boxShadow: `0 0 20px ${themeColors.glow}`,
-            transition: 'width 1s cubic-bezier(0.34, 1.4, 0.64, 1)',
-            position: 'relative'
+            borderRadius: '999px',
+            boxShadow: `0 0 14px ${themeColors.glow}`,
+            transition: 'width 0.8s cubic-bezier(0.34, 1.4, 0.64, 1)'
           }} />
 
           {/* 4 Section Dividers */}
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '25%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '75%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
-        </div>
-
-        {/* 4 Milestones Badges with Celebration Animations */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '16px' }}>
-          {milestones.map((m, idx) => {
-            const isReached = targetAchieve >= m.pct
-            const remainingToPhase = Math.max(m.value - mtdSales, 0)
-            return (
-              <div
-                key={idx}
-                className={isReached ? themeColors.celebrateClass : ''}
-                style={{
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  background: isReached ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
-                  border: isReached ? `1px solid ${themeColors.accent}` : '1px solid rgba(255,255,255,0.06)',
-                  transition: 'all 0.3s ease',
-                  position: 'relative'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '15px' }}>{m.icon}</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: isReached ? '#fff' : 'var(--text-muted)' }}>
-                      {m.label} ({m.pct}%)
-                    </span>
-                  </div>
-                  {isReached ? (
-                    <span className="celebration-sparkle" style={{ fontSize: '11px', background: `${themeColors.accent}25`, color: themeColors.accent, border: `1px solid ${themeColors.accent}`, padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                      🎉 Achieved!
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      In Progress
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: isReached ? themeColors.accent : '#e4e4e7' }}>
-                    {formatCurrency(m.value)}
-                  </span>
-                  {!isReached && (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Needs +{formatCurrency(remainingToPhase)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '25%', width: '2px', background: 'rgba(255,255,255,0.25)', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: '2px', background: 'rgba(255,255,255,0.25)', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '75%', width: '2px', background: 'rgba(255,255,255,0.25)', zIndex: 2 }} />
         </div>
       </div>
 
