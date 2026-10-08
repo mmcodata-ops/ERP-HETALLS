@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import os
+
+file_path = 'frontend/src/pages/Forecast.jsx'
+
+jsx_content = """import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import {
   TrendingUp, Target, Activity, CheckCircle, Clock, AlertTriangle, AlertCircle, DollarSign
@@ -348,3 +352,9 @@ export default function Forecast() {
     </div>
   )
 }
+"""
+
+with open(file_path, 'w', encoding='utf-8') as f:
+    f.write(jsx_content)
+
+print("Restructured Forecast.jsx perfectly to match design reference")
