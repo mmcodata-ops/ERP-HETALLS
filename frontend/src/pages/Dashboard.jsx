@@ -683,8 +683,8 @@ export default function Dashboard() {
   const chartGroupByRef = useRef('month')
   const [fullScreenChart, setFullScreenChart] = useState(null) // 'hg' = Hetalls Group (original), 'ho' = Hetalls Only
   const [revenueChartMonth, setRevenueChartMonth] = useState(null)
-  const [revenueChartDay, setRevenueChartDay] = useState(null)
-  const revenueChart = chartGroupBy === 'month' ? revenueChartMonth : revenueChartDay;
+  const [revenueChartMtd, setRevenueChartMtd] = useState(null)
+  const revenueChart = chartGroupBy === 'month' ? revenueChartMonth : revenueChartMtd;
   const [recentOrders, setRecentOrders] = useState([])
   const [todayOrders, setTodayOrders] = useState([])
   const [companiesRev, setCompaniesRev] = useState(null)
@@ -921,15 +921,15 @@ export default function Dashboard() {
       Promise.allSettled([
           axios.get(`${API}/api/dashboard/kpis?_t=${t}`),
           axios.get(`${API}/api/dashboard/revenue-chart?group_by=month&_t=${t}`),
-          axios.get(`${API}/api/dashboard/revenue-chart?group_by=day&_t=${t}`),
+          axios.get(`${API}/api/dashboard/revenue-chart?group_by=mtd&_t=${t}`),
           axios.get(`${API}/api/dashboard/recent-orders?_t=${t}`),
           axios.get(`${API}/api/dashboard/today-orders?_t=${t}`),
           axios.get(`${API}/api/dashboard/companies-revenue?_t=${t}`),
-        ]).then(([k, rMonth, rDay, o, tData, c]) => {
+        ]).then(([k, rMonth, rMtd, o, tData, c]) => {
           if (!isMounted) return;
           if (k.status === 'fulfilled') setKpis(k.value.data);
           if (rMonth.status === 'fulfilled') setRevenueChartMonth(rMonth.value.data);
-          if (rDay.status === 'fulfilled') setRevenueChartDay(rDay.value.data);
+          if (rMtd.status === 'fulfilled') setRevenueChartMtd(rMtd.value.data);
         if (o.status === 'fulfilled') setRecentOrders(o.value.data);
         if (tData.status === 'fulfilled') setTodayOrders(tData.value.data);
         if (c.status === 'fulfilled') setCompaniesRev(c.value.data);
@@ -1251,7 +1251,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="card-title">{chartGroupBy === 'day' ? 'Date-Wise (MTD)' : 'Monthly'} Revenue Trend</div>
+              <div className="card-title">{chartGroupBy === 'mtd' ? 'Date-Wise (MTD)' : 'Monthly'} Revenue Trend</div>
               <div className="card-subtitle">{chartView === 'ho' ? 'Hetalls Only' : 'All Companies'} &mdash; Trend</div>
             </div>
             <div className="glass-switch" data-v={chartGroupBy}>
@@ -1260,9 +1260,9 @@ export default function Dashboard() {
                 chartGroupByRef.current = 'month';
                 setChartGroupBy('month');
               }}>Month</button>
-              <button className={chartGroupBy === 'day' ? 'on' : ''} onClick={() => {
-                chartGroupByRef.current = 'day';
-                setChartGroupBy('day');
+              <button className={chartGroupBy === 'mtd' ? 'on' : ''} onClick={() => {
+                chartGroupByRef.current = 'mtd';
+                setChartGroupBy('mtd');
               }}>Date</button>
             </div>
           </div>
