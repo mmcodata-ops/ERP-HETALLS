@@ -99,6 +99,10 @@ export default function Forecast() {
   const requiredVelocity = salesGap > 0 ? salesGap / daysRemaining : 0
   const targetAchieve = target > 0 ? (mtdSales / target) * 100 : 0
 
+  // Expected trajectory up to today and pacing difference (e.g. $32,258 target - $27,250 actual = -$5,008)
+  const expectedMtdTarget = Math.round(((target || 0) / (totalDays || 1)) * daysPassed)
+  const paceDifference = mtdSales - expectedMtdTarget
+
   let confidence = 'Low', confColor = '#ef4444'
   if (forecast >= target) { confidence = 'High'; confColor = '#10b981' }
   else if (forecast >= target * 0.85) { confidence = 'Medium'; confColor = '#f59e0b' }
@@ -270,17 +274,75 @@ export default function Forecast() {
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const actualItem = payload.find(p => p.dataKey === 'Actual Sales' && p.value !== null && p.value !== undefined)
+      const projectedItem = payload.find(p => p.dataKey === 'Projected Pace' && p.value !== null && p.value !== undefined)
+      const targetItem = payload.find(p => p.dataKey === 'Target Trajectory' && p.value !== null && p.value !== undefined)
+
+      const actualVal = actualItem?.value ?? null
+      const targetVal = targetItem?.value ?? null
+      const projectedVal = projectedItem?.value ?? null
+
+      const isActualDay = actualVal !== null
+      const currentVal = isActualDay ? actualVal : projectedVal
+
+      // Target difference calculation (e.g. 32,258 - 27,250 = -$5,008 Behind)
+      const diff = (currentVal !== null && targetVal !== null) ? currentVal - targetVal : null
+      const diffAbs = diff !== null ? Math.abs(diff) : null
+      const isAhead = diff !== null && diff >= 0
+
       return (
-        <div style={{ background: 'rgba(10,15,30,0.95)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>{label}</p>
-          {payload.map((p, idx) => {
-            if (p.value === null || p.value === undefined) return null
-            return (
-              <p key={idx} style={{ margin: '0 0 4px 0', color: p.color, fontWeight: 500 }}>
-                {p.name}: {formatCurrency(p.value)}
-              </p>
-            )
-          })}
+        <div style={{
+          background: 'rgba(10, 15, 30, 0.96)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          padding: '12px 14px',
+          borderRadius: '10px',
+          color: '#fff',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+          minWidth: '220px'
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px' }}>
+            {label}
+          </p>
+
+          {isActualDay && (
+            <p style={{ margin: '0 0 5px 0', color: '#3b82f6', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', gap: '14px' }}>
+              <span>Actual Sales:</span>
+              <span>{formatCurrency(actualVal)}</span>
+            </p>
+          )}
+
+          {!isActualDay && projectedVal !== null && (
+            <p style={{ margin: '0 0 5px 0', color: '#60a5fa', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', gap: '14px' }}>
+              <span>Projected Pace:</span>
+              <span>{formatCurrency(projectedVal)}</span>
+            </p>
+          )}
+
+          {targetVal !== null && (
+            <p style={{ margin: '0 0 6px 0', color: themeColors.accent, fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', gap: '14px' }}>
+              <span>Target Trajectory:</span>
+              <span>{formatCurrency(targetVal)}</span>
+            </p>
+          )}
+
+          {diff !== null && (
+            <div style={{
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: isAhead ? '#10b981' : '#f59e0b'
+            }}>
+              <span>Target Difference:</span>
+              <span>
+                {isAhead ? `+${formatCurrency(diffAbs)} Ahead` : `-${formatCurrency(diffAbs)} Behind`}
+              </span>
+            </div>
+          )}
         </div>
       )
     }
@@ -368,8 +430,16 @@ export default function Forecast() {
           <div style={{ fontSize: '20px', fontWeight: 700, color: confColor }}>{formatCurrency(forecast)}</div>
         </div>
         <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${targetAchieve >= 100 ? '#10b981' : themeColors.accent}` }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Target Achieved</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Target Achieved</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: paceDifference >= 0 ? '#10b981' : '#f59e0b' }}>
+              {paceDifference >= 0 ? `+${formatCurrency(paceDifference)}` : `-${formatCurrency(Math.abs(paceDifference))}`}
+            </span>
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{targetAchieve.toFixed(1)}%</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            {paceDifference >= 0 ? 'Ahead of MTD target pace' : `${formatCurrency(Math.abs(paceDifference))} behind MTD pace`}
+          </div>
         </div>
         <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${confColor}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Confidence</div>
