@@ -3,7 +3,7 @@ import axios from 'axios'
 import { PORTAL_COLORS_MAP, FALLBACK_COLORS, getPortalColor } from './Dashboard'
 import {
   TrendingUp, Target, Activity, CheckCircle, AlertTriangle, AlertCircle, DollarSign,
-  ChevronDown, Globe, Lightbulb, Zap, TrendingDown, ArrowUpRight, ShieldAlert, Sparkles
+  ChevronDown, Globe, Lightbulb, Zap, TrendingDown, ArrowUpRight, ShieldAlert, Sparkles, Award
 } from 'lucide-react'
 import {
   AreaChart, Area, ComposedChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -20,13 +20,17 @@ export default function Forecast() {
   const [dailyData, setDailyData] = useState([])
   const [countryData, setCountryData] = useState({ hg: [], ho: [] })
   const [loading, setLoading] = useState(true)
-  const [targetStr, setTargetStr] = useState(localStorage.getItem('forecast_target') || '100000')
+
+  // 1. Independent targets for HG and HO
+  const [targetHgStr, setTargetHgStr] = useState(localStorage.getItem('forecast_target_hg') || '125000')
+  const [targetHoStr, setTargetHoStr] = useState(localStorage.getItem('forecast_target_ho') || '25000')
   const [isEditingTarget, setIsEditingTarget] = useState(false)
   const [selectedPortal, setSelectedPortal] = useState('All')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [companyView, setCompanyView] = useState('hg') // 'hg' or 'ho'
   const dropdownRef = useRef(null)
 
+  const targetStr = companyView === 'ho' ? targetHoStr : targetHgStr
   const target = parseFloat(targetStr) || 0
 
   // Close dropdown on click outside
@@ -59,8 +63,20 @@ export default function Forecast() {
     return () => { isMounted = false }
   }, [])
 
+  const handleTargetChange = (e) => {
+    if (companyView === 'ho') {
+      setTargetHoStr(e.target.value)
+    } else {
+      setTargetHgStr(e.target.value)
+    }
+  }
+
   const handleTargetSave = () => {
-    localStorage.setItem('forecast_target', targetStr)
+    if (companyView === 'ho') {
+      localStorage.setItem('forecast_target_ho', targetHoStr)
+    } else {
+      localStorage.setItem('forecast_target_hg', targetHgStr)
+    }
     setIsEditingTarget(false)
   }
 
@@ -71,7 +87,7 @@ export default function Forecast() {
   const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate()
   const daysRemaining = Math.max(totalDays - daysPassed, 1)
 
-  // 1. Strict HG vs HO portal filtering
+  // Strict HG vs HO portal filtering
   const hghoFiltered = portalData.filter(p => companyView === 'ho' ? isHO(p.name) : !isHO(p.name))
   const filteredPortalData = hghoFiltered.filter(p => selectedPortal === 'All' || p.name === selectedPortal)
   const mtdSales = filteredPortalData.reduce((acc, curr) => acc + curr.value, 0)
@@ -99,46 +115,86 @@ export default function Forecast() {
 
   const formatCurrency = (val) => `$${(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 
-  // 2. Daily Sales Calculation for Line/Area Chart (Fixing $0 issue)
+  // 2. WHOLE MONTH SALES OVERVIEW (All 30/31 days of current month)
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const currentMonthName = monthNames[currentMonth]
 
-  // Filter dailyData by current month abbreviation (e.g. "Oct") and sort chronologically by day number
-  const currentMonthDaily = dailyData
-    .filter(d => d.month && typeof d.month === 'string' && d.month.includes(currentMonthName))
-    .sort((a, b) => (parseInt(a.month) || 0) - (parseInt(b.month) || 0))
+  // Map dailyData entries by day number
+  const dailyDayMap = {}
+  for (const d of dailyData) {
+    if (d.month && typeof d.month === 'string' && d.month.includes(currentMonthName)) {
+      const dNum = parseInt(d.month)
+      if (dNum) dailyDayMap[dNum] = d
+    }
+  }
 
   let cumulative = 0
   const chartData = []
 
-  for (const dayEntry of currentMonthDaily) {
-    let dayTotal = 0
-    for (const key of Object.keys(dayEntry)) {
-      if (['month', 'order_count_hg', 'order_count_ho', 'equiv'].includes(key)) continue
-      
-      const isHetalls = isHO(key)
-      if (companyView === 'ho' && !isHetalls) continue
-      if (companyView === 'hg' && isHetalls) continue
+  for (let i = 1; i <= totalDays; i++) {
+    const dayLabel = `${String(i).padStart(2, '0')} ${currentMonthName}`
+    const dayEntry = dailyDayMap[i]
 
-      if (selectedPortal !== 'All' && key !== selectedPortal) continue
-
-      dayTotal += (parseFloat(dayEntry[key]) || 0)
+    if (i <= daysPassed) {
+      let dayTotal = 0
+      if (dayEntry) {
+        for (const key of Object.keys(dayEntry)) {
+          if (['month', 'order_count_hg', 'order_count_ho', 'equiv'].includes(key)) continue
+          const isHetalls = isHO(key)
+          if (companyView === 'ho' && !isHetalls) continue
+          if (companyView === 'hg' && isHetalls) continue
+          if (selectedPortal !== 'All' && key !== selectedPortal) continue
+          dayTotal += (parseFloat(dayEntry[key]) || 0)
+        }
+      }
+      cumulative += dayTotal
     }
 
-    cumulative += dayTotal
-    const dayNum = parseInt(dayEntry.month) || 1
-    const targetTrajectory = ((target || 0) / (totalDays || 1)) * dayNum
+    const targetTrajectory = Math.round(((target || 0) / (totalDays || 1)) * i)
+    const actualSales = i <= daysPassed ? Math.round(cumulative) : null
+    
+    // Smooth projected line extending from today to month-end
+    let projectedPace = null
+    if (i >= daysPassed) {
+      projectedPace = Math.round(cumulative + (i - daysPassed) * salesVelocity)
+    }
 
     chartData.push({
-      name: dayEntry.month,
-      'Actual Sales': Math.round(cumulative),
-      'Target Trajectory': Math.round(targetTrajectory)
+      name: dayLabel,
+      dayNum: i,
+      'Actual Sales': actualSales,
+      'Projected Pace': projectedPace,
+      'Target Trajectory': targetTrajectory
     })
   }
 
-  // 3. Country-Wise Sales Data
+  // 3. 4-PART MILESTONE CONFIGURATION
+  const milestones = [
+    { label: 'Q1 Kickoff', pct: 25, value: target * 0.25, icon: '🎯' },
+    { label: 'Q2 Halfway', pct: 50, value: target * 0.50, icon: '🔥' },
+    { label: 'Q3 Acceleration', pct: 75, value: target * 0.75, icon: '⚡' },
+    { label: 'Q4 Final Goal', pct: 100, value: target * 1.00, icon: '🏆' }
+  ]
+
+  // Color scheme based on HG vs HO
+  const themeColors = companyView === 'ho' ? {
+    name: 'H.O. (Hetalls)',
+    accent: '#06b6d4',
+    secondary: '#8b5cf6',
+    gradient: 'linear-gradient(90deg, #8b5cf6 0%, #06b6d4 100%)',
+    glow: 'rgba(6, 182, 212, 0.5)',
+    celebrateClass: 'milestone-celebrate-ho'
+  } : {
+    name: 'H.G. (Hetalls Group)',
+    accent: '#f59e0b',
+    secondary: '#10b981',
+    gradient: 'linear-gradient(90deg, #f59e0b 0%, #10b981 100%)',
+    glow: 'rgba(245, 158, 11, 0.5)',
+    celebrateClass: 'milestone-celebrate-hg'
+  }
+
+  // Country-wise data
   const rawCountryList = countryData[companyView] || []
-  // Fallback if country list from backend is still loading or empty
   const activeCountries = rawCountryList.length > 0 ? rawCountryList : [
     { country: 'United States', value: mtdSales * 0.72, pct: 72 },
     { country: 'Canada', value: mtdSales * 0.11, pct: 11 },
@@ -155,7 +211,7 @@ export default function Forecast() {
     { tag: 'Niche Market', color: '#ec4899', note: 'Untapped international opportunity' }
   ]
 
-  // 4. AI Diagnostics & Recommendation Engine
+  // AI Diagnostics Engine
   const generateAIInsights = () => {
     const causes = []
     const recommendations = []
@@ -163,7 +219,6 @@ export default function Forecast() {
     const topChannel = portalStats[0]
     const laggingChannels = portalStats.filter(p => p.velocity < salesVelocity * 0.4)
 
-    // Root cause diagnostics
     if (salesVelocity < requiredVelocity) {
       causes.push({
         title: 'Daily Velocity Deficit',
@@ -191,7 +246,6 @@ export default function Forecast() {
       impact: 'Low'
     })
 
-    // Actionable increment playbooks
     if (topChannel) {
       recommendations.push({
         channel: topChannel.name,
@@ -227,24 +281,18 @@ export default function Forecast() {
       return (
         <div style={{ background: 'rgba(10,15,30,0.95)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>{label}</p>
-          {payload.map((p, idx) => (
-            <p key={idx} style={{ margin: '0 0 4px 0', color: p.color, fontWeight: 500 }}>
-              {p.name}: {formatCurrency(p.value)}
-            </p>
-          ))}
+          {payload.map((p, idx) => {
+            if (p.value === null || p.value === undefined) return null
+            return (
+              <p key={idx} style={{ margin: '0 0 4px 0', color: p.color, fontWeight: 500 }}>
+                {p.name}: {formatCurrency(p.value)}
+              </p>
+            )
+          })}
         </div>
       )
     }
     return null
-  }
-
-  const CustomBarLabel = (props) => {
-    const { x, y, width, height, value } = props
-    return (
-      <text x={x + width + 10} y={y + height / 2} fill="var(--text-muted)" dy="0.35em" fontSize="12" fontWeight="500">
-        {formatCurrency(value)}
-      </text>
-    )
   }
 
   if (loading) {
@@ -259,17 +307,17 @@ export default function Forecast() {
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px 0' }}>Site Preview</h1>
           <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-            Showing performance for <strong style={{ color: '#fff' }}>{companyView === 'ho' ? 'Hetalls Only (H.O.)' : 'Hetalls Group (H.G.)'}</strong> channels.
+            Showing performance for <strong style={{ color: '#fff' }}>{themeColors.name}</strong> channels.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Requirement 2: Strict HG vs HO Pill Toggle in the Top Right */}
+          {/* Requirement 1 & 2: HG vs HO Pill Toggle with Independent Targets */}
           <div className="glass-switch" data-v={companyView}>
             <span className="glass-switch-knob" />
             <button
               className={companyView === 'hg' ? 'on' : ''}
-              onClick={() => { setCompanyView('hg'); setSelectedPortal('All'); }}
+              onClick={() => { setCompanyView('hg'); setSelectedPortal('All'); setIsEditingTarget(false); }}
             >
               H.G.
             </button>
@@ -281,31 +329,33 @@ export default function Forecast() {
             </button>
           </div>
 
-          {/* Target Box */}
+          {/* Independent Target Box */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-color)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-            <Target size={16} color="var(--primary-color)" />
-            <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Target:</span>
+            <Target size={16} color={themeColors.accent} />
+            <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+              {companyView.toUpperCase()} Target:
+            </span>
             {isEditingTarget ? (
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="number"
                   value={targetStr}
-                  onChange={(e) => setTargetStr(e.target.value)}
-                  style={{ width: '100px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', padding: '2px 8px' }}
+                  onChange={handleTargetChange}
+                  style={{ width: '110px', background: 'rgba(0,0,0,0.3)', border: `1px solid ${themeColors.accent}`, color: '#fff', borderRadius: '4px', padding: '2px 8px' }}
                 />
                 <button
                   onClick={handleTargetSave}
-                  style={{ background: 'var(--primary-color)', border: 'none', color: '#fff', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer' }}
+                  style={{ background: themeColors.accent, border: 'none', color: '#000', fontWeight: 700, borderRadius: '4px', padding: '2px 10px', cursor: 'pointer' }}
                 >
                   Save
                 </button>
               </div>
             ) : (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontWeight: 600, fontSize: '15px' }}>{formatCurrency(target)}</span>
+                <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{formatCurrency(target)}</span>
                 <button
                   onClick={() => setIsEditingTarget(true)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                  style={{ background: 'none', border: 'none', color: themeColors.accent, cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
                 >
                   Edit
                 </button>
@@ -317,7 +367,7 @@ export default function Forecast() {
 
       {/* ── 6 Mini KPI Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #3b82f6' }}>
+        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${themeColors.accent}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>MTD Sales</div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{formatCurrency(mtdSales)}</div>
         </div>
@@ -325,7 +375,7 @@ export default function Forecast() {
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Forecast</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: confColor }}>{formatCurrency(forecast)}</div>
         </div>
-        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${targetAchieve >= 100 ? '#10b981' : '#3b82f6'}` }}>
+        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${targetAchieve >= 100 ? '#10b981' : themeColors.accent}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Target Achieved</div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{targetAchieve.toFixed(1)}%</div>
         </div>
@@ -333,7 +383,7 @@ export default function Forecast() {
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Confidence</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: confColor }}>{confidence}</div>
         </div>
-        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #f59e0b' }}>
+        <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${themeColors.secondary}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>Velocity</div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{formatCurrency(salesVelocity)}/d</div>
         </div>
@@ -343,15 +393,112 @@ export default function Forecast() {
         </div>
       </div>
 
-      {/* ── Main Section: Sales Overview + Sales by Source ── */}
+      {/* ── Requirement 3: 4-Portion Milestone Target Progress Bar with Celebration Animation ── */}
+      <div className="card" style={{ padding: '20px 24px', marginBottom: '24px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Award size={20} color={themeColors.accent} />
+            <div>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>
+                {themeColors.name} Target Milestones (4 Phases)
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                4-Stage Goal Progression
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: themeColors.accent }}>
+              {targetAchieve.toFixed(1)}% Achieved
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              ({formatCurrency(mtdSales)} / {formatCurrency(target)})
+            </span>
+          </div>
+        </div>
+
+        {/* 4-Portion Progress Bar Track */}
+        <div style={{ position: 'relative', height: '16px', background: 'rgba(0,0,0,0.4)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+          {/* Progress fill from left to right */}
+          <div style={{
+            width: `${Math.min(targetAchieve, 100)}%`,
+            height: '100%',
+            background: themeColors.gradient,
+            borderRadius: '12px',
+            boxShadow: `0 0 20px ${themeColors.glow}`,
+            transition: 'width 1s cubic-bezier(0.34, 1.4, 0.64, 1)',
+            position: 'relative'
+          }} />
+
+          {/* 4 Section Dividers */}
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '25%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '75%', width: '2px', background: 'rgba(255,255,255,0.3)', zIndex: 2 }} />
+        </div>
+
+        {/* 4 Milestones Badges with Celebration Animations */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '16px' }}>
+          {milestones.map((m, idx) => {
+            const isReached = targetAchieve >= m.pct
+            const remainingToPhase = Math.max(m.value - mtdSales, 0)
+            return (
+              <div
+                key={idx}
+                className={isReached ? themeColors.celebrateClass : ''}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background: isReached ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
+                  border: isReached ? `1px solid ${themeColors.accent}` : '1px solid rgba(255,255,255,0.06)',
+                  transition: 'all 0.3s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '15px' }}>{m.icon}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: isReached ? '#fff' : 'var(--text-muted)' }}>
+                      {m.label} ({m.pct}%)
+                    </span>
+                  </div>
+                  {isReached ? (
+                    <span className="celebration-sparkle" style={{ fontSize: '11px', background: `${themeColors.accent}25`, color: themeColors.accent, border: `1px solid ${themeColors.accent}`, padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      🎉 Achieved!
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      In Progress
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: isReached ? themeColors.accent : '#e4e4e7' }}>
+                    {formatCurrency(m.value)}
+                  </span>
+                  {!isReached && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      Needs +{formatCurrency(remainingToPhase)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Main Section: Sales Overview (WHOLE MONTH) + Sales by Source ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '24px' }}>
 
-        {/* Sales Overview Line/Area Chart */}
+        {/* Requirement 2: Sales Overview Chart for WHOLE MONTH */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sales Overview</h3>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Daily cumulative trajectory vs target</span>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sales Overview (Full Month)</h3>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Day 1 through Day {totalDays} of {currentMonthName} &mdash; Today is Day {daysPassed}
+              </span>
             </div>
 
             {/* Liquid Glass Channel Dropdown */}
@@ -430,7 +577,7 @@ export default function Forecast() {
             </div>
           </div>
 
-          <div style={{ flex: 1, minHeight: '320px' }}>
+          <div style={{ flex: 1, minHeight: '340px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
@@ -440,10 +587,24 @@ export default function Forecast() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                <YAxis tickFormatter={v => `$${v / 1000}k`} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} width={50} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                  interval={2}
+                />
+                <YAxis
+                  tickFormatter={v => `$${v / 1000}k`}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                  width={50}
+                />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
+
+                {/* Actual Sales Line (through Day 8) */}
                 <Area
                   type="linear"
                   dataKey="Actual Sales"
@@ -452,17 +613,31 @@ export default function Forecast() {
                   fill="url(#colorActual)"
                   strokeWidth={3}
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, fill: '#3b82f6', stroke: '#1a1f36' }}
-                  activeDot={{ r: 6 }}
+                  connectNulls={false}
+                  dot={{ r: 3, strokeWidth: 2, fill: '#3b82f6', stroke: '#1a1f36' }}
+                  activeDot={{ r: 5 }}
                 />
+
+                {/* Projected Pace Line (from Day 8 to Day 31) */}
+                <Line
+                  type="linear"
+                  dataKey="Projected Pace"
+                  stroke="#60a5fa"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  isAnimationActive={false}
+                  dot={false}
+                />
+
+                {/* Target Trajectory Line (Day 1 to Day 31) */}
                 <Line
                   type="linear"
                   dataKey="Target Trajectory"
-                  stroke="#10b981"
-                  strokeWidth={3}
+                  stroke={themeColors.accent}
+                  strokeWidth={2.5}
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, fill: '#10b981', stroke: '#1a1f36' }}
-                  activeDot={{ r: 6 }}
+                  dot={{ r: 2.5, strokeWidth: 1.5, fill: themeColors.accent, stroke: '#1a1f36' }}
+                  activeDot={{ r: 5 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -474,7 +649,7 @@ export default function Forecast() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sales by Source</h3>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {companyView === 'ho' ? 'H.O. Channels' : 'H.G. Channels'}
+              {themeColors.name} Channels
             </span>
           </div>
 
@@ -568,14 +743,14 @@ export default function Forecast() {
           </div>
         </div>
 
-        {/* Requirement 4: Country-Wise Sales & High Sales Prediction */}
+        {/* Country-Wise Sales & High Sales Prediction */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Globe size={18} color="var(--primary-color)" />
+              <Globe size={18} color={themeColors.accent} />
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Country-Wise Sales & Prediction</h3>
             </div>
-            <span style={{ fontSize: '11px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', padding: '3px 8px', borderRadius: '4px', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', background: `${themeColors.accent}15`, color: themeColors.accent, border: `1px solid ${themeColors.accent}30`, padding: '3px 8px', borderRadius: '4px', fontWeight: 600 }}>
               Live Geo-Distribution
             </span>
           </div>
@@ -614,15 +789,15 @@ export default function Forecast() {
         </div>
       </div>
 
-      {/* ── Requirement 5: AI Recommendations (What causes sales down & how to increment) ── */}
+      {/* ── AI Diagnostics & Recommendation Engine ── */}
       <div className="card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={20} color="#f59e0b" />
+            <Sparkles size={20} color={themeColors.accent} />
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>AI Diagnostic & Sales Growth Playbook</h3>
           </div>
-          <span style={{ fontSize: '12px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)', padding: '4px 10px', borderRadius: '20px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Zap size={13} /> Active Channel Intelligence
+          <span style={{ fontSize: '12px', background: `${themeColors.accent}15`, color: themeColors.accent, border: `1px solid ${themeColors.accent}30`, padding: '4px 10px', borderRadius: '20px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Zap size={13} /> {companyView.toUpperCase()} Intelligence
           </span>
         </div>
 
