@@ -2024,3 +2024,111 @@ tbody td:first-child { color: var(--text-primary); font-weight: 500; }
 @media (min-width: 901px) {
   .tooltip-close-btn { display: none !important; }
 }
+
+/* ─── Forecast (Site Preview) Mobile & Responsive Styles ─── */
+.forecast-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.forecast-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.forecast-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.forecast-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.forecast-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
+}
+
+.forecast-donut-col-chart {
+  width: 50%;
+  min-width: 160px;
+  height: 240px;
+  position: relative;
+}
+
+.forecast-donut-col-legend {
+  width: 50%;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1200px) {
+  .forecast-kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .forecast-grid-2col {
+    grid-template-columns: 1fr !important;
+  }
+  .forecast-header-row {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+}
+
+@media (max-width: 650px) {
+  .forecast-container {
+    padding: 14px 10px !important;
+  }
+  .forecast-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .forecast-donut-wrap {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .forecast-donut-col-chart {
+    width: 100% !important;
+    min-width: unset !important;
+    height: 200px !important;
+  }
+  .forecast-donut-col-legend {
+    width: 100% !important;
+    min-width: unset !important;
+    max-height: 180px !important;
+  }
+  .forecast-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .forecast-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -354,10 +354,10 @@ export default function Forecast() {
   }
 
   return (
-    <div className="dashboard" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="dashboard forecast-container">
 
       {/* ── Top Header Controls ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="forecast-header-row">
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px 0' }}>Site Preview</h1>
           <p style={{ margin: 0, color: 'var(--text-muted)' }}>
@@ -420,7 +420,7 @@ export default function Forecast() {
       </div>
 
       {/* ── 6 Mini KPI Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+      <div className="forecast-kpi-grid">
         <div className="card" style={{ padding: '16px', borderLeft: `4px solid ${themeColors.accent}` }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '4px' }}>MTD Sales</div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{formatCurrency(mtdSales)}</div>
@@ -484,12 +484,12 @@ export default function Forecast() {
       </div>
 
       {/* ── Main Section: Sales Overview (WHOLE MONTH) + Sales by Source ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+      <div className="forecast-grid-2col">
 
         {/* Requirement 2: Sales Overview Chart for WHOLE MONTH */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
+          <div className="forecast-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ flex: '1 1 200px', minWidth: '180px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sales Overview (Full Month)</h3>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 Day 1 through Day {totalDays} of {currentMonthName} &mdash; Today is Day {daysPassed}
@@ -497,7 +497,7 @@ export default function Forecast() {
             </div>
 
             {/* Liquid Glass Channel Dropdown */}
-            <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 style={{
@@ -512,11 +512,12 @@ export default function Forecast() {
                   fontSize: '13px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                {selectedPortal === 'All' ? 'All Channels' : selectedPortal}
-                <ChevronDown size={14} />
+                <span style={{ whiteSpace: 'nowrap' }}>{selectedPortal === 'All' ? 'All Channels' : selectedPortal}</span>
+                <ChevronDown size={14} style={{ flexShrink: 0 }} />
               </div>
 
               {isDropdownOpen && (
@@ -648,8 +649,8 @@ export default function Forecast() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ width: '48%', minWidth: '180px', height: '240px', position: 'relative' }}>
+          <div className="forecast-donut-wrap">
+            <div className="forecast-donut-col-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -677,7 +678,7 @@ export default function Forecast() {
             </div>
 
             {/* Custom Matching Legend */}
-            <div style={{ width: '48%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto' }}>
+            <div className="forecast-donut-col-legend">
               {portalStats.map((p, i) => {
                 const color = getPortalColor(p.name, i)
                 const pct = ((p.value / (mtdSales || 1)) * 100).toFixed(0)
@@ -701,13 +702,13 @@ export default function Forecast() {
       </div>
 
       {/* ── Section 2: Portal Breakdown + Country-Wise Sales ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+      <div className="forecast-grid-2col">
 
         {/* Portal Breakdown Table */}
         <div className="card" style={{ padding: '24px' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>Portal Breakdown</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: '460px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500, fontSize: '12px' }}>Channel</th>
@@ -796,7 +797,7 @@ export default function Forecast() {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
 
           {/* Causes Column */}
           <div style={{ background: 'rgba(239, 68, 68, 0.03)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '12px', padding: '16px' }}>
