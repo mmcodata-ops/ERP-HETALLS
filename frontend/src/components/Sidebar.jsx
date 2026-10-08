@@ -9,15 +9,8 @@ import {
 
 const NAV = [
   { label: 'Main', items: [
-    { 
-      label: 'Dashboards', 
-      icon: LayoutDashboard, 
-      permission: 'dashboard',
-      dropdown: [
-        { to: '/dashboard', label: 'Main Dashboard' },
-        { to: '/forecast',  label: 'Site Preview' }
-      ]
-    },
+    { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',   permission: 'dashboard' },
+    { to: '/forecast',   icon: Monitor,         label: 'Site Preview',permission: 'dashboard' },
   ]},
   { label: 'Finance & People', items: [
     { to: '/accounts',   icon: DollarSign,      label: 'Accounts',    permission: 'accounts' },

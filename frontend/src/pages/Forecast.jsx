@@ -125,8 +125,8 @@ export default function Forecast() {
       }
     }
     
-    cumulative += dayTotal
-    const targetTrajectory = (target / totalDays) * i
+    cumulative += (dayTotal || 0)
+    const targetTrajectory = ((target || 0) / (totalDays || 1)) * i
     
     chartData.push({
       name: dayLabel,
@@ -282,17 +282,17 @@ export default function Forecast() {
               <Line 
                 type="linear" 
                 dataKey="Actual Sales" 
-                stroke="var(--primary-color)" 
+                stroke="#3b82f6" isAnimationActive={false} 
                 strokeWidth={3} 
-                dot={{ r: 4, strokeWidth: 2, fill: 'var(--primary-color)', stroke: '#1a1f36' }} 
+                dot={{ r: 4, strokeWidth: 2, fill: '#3b82f6', stroke: '#1a1f36' }} 
                 activeDot={{ r: 6 }} 
               />
               <Line 
                 type="linear" 
                 dataKey="Target Trajectory" 
-                stroke="var(--success-color)" 
+                stroke="#10b981" isAnimationActive={false} 
                 strokeWidth={3} 
-                dot={{ r: 4, strokeWidth: 2, fill: 'var(--success-color)', stroke: '#1a1f36' }} 
+                dot={{ r: 4, strokeWidth: 2, fill: '#10b981', stroke: '#1a1f36' }} 
                 activeDot={{ r: 6 }} 
               />
             </LineChart>
